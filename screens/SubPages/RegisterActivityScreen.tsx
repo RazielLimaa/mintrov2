@@ -1,3 +1,4 @@
+import Header from '@/components/Header';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
@@ -22,16 +23,15 @@ const RegisterActivityScreen: React.FC<RegisterActivityScreenProps> = () => {
 
   return (
     <View style={styles.container}>
-      <Appbar.Header style={styles.appbar}>
+      <Header avatarChar="A" />
+      <Appbar.Header>
         <Appbar.BackAction onPress={() => router.push('/activity')} />
         <Appbar.Content title="Registrar Atividade" titleStyle={styles.appbarTitle} />
         <Appbar.Action
           icon={() => <Text style={styles.mintrLogo}>Mintr💧</Text>}
-          onPress={() => console.log('Mintr Logo Clicado')}
-        />
+          onPress={() => console.log('Mintr Logo Clicado')} />
         <Appbar.Action icon="content-save-check" color="green" onPress={handleSave} />
       </Appbar.Header>
-
       <View style={styles.formContent}>
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Exercício</Text>
@@ -40,8 +40,7 @@ const RegisterActivityScreen: React.FC<RegisterActivityScreenProps> = () => {
             value={exercise}
             onChangeText={setExercise}
             style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
-          />
+            outlineStyle={styles.textInputOutline as ViewStyle} />
         </View>
 
         <View style={styles.inputSection}>
@@ -50,11 +49,10 @@ const RegisterActivityScreen: React.FC<RegisterActivityScreenProps> = () => {
             mode="outlined"
             value={date}
             onChangeText={setDate}
-            editable={false} 
+            editable={false}
             onPress={() => console.log('Abrir DatePicker')}
             style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
-          />
+            outlineStyle={styles.textInputOutline as ViewStyle} />
         </View>
 
         <View style={styles.inputSection}>
@@ -63,11 +61,10 @@ const RegisterActivityScreen: React.FC<RegisterActivityScreenProps> = () => {
             mode="outlined"
             value={time}
             onChangeText={setTime}
-            editable={false} 
-            onPress={() => console.log('Abrir TimePicker')} 
+            editable={false}
+            onPress={() => console.log('Abrir TimePicker')}
             style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
-          />
+            outlineStyle={styles.textInputOutline as ViewStyle} />
         </View>
 
         <View style={styles.inputSection}>
@@ -78,8 +75,7 @@ const RegisterActivityScreen: React.FC<RegisterActivityScreenProps> = () => {
             onChangeText={setDuration}
             keyboardType="numeric"
             style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
-          />
+            outlineStyle={styles.textInputOutline as ViewStyle} />
         </View>
       </View>
     </View>

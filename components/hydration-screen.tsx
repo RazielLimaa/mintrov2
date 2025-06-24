@@ -5,9 +5,8 @@ import { useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, SafeAreaView } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import ProgressCircle from "../../components/ProgressCircle"
-import WaterDropIcon from "../../components/WaterDropIcon"
-import Header from "@/components/Header"
+import ProgressCircle from "../components/ProgressCircle"
+import WaterDropIcon from "../components/WaterDropIcon"
 
 const { width, height } = Dimensions.get("window")
 
@@ -22,23 +21,25 @@ const HydrationScreen: React.FC = () => {
   }
 
   const handleAddWater = () => {
-    router.push("/registerhydratation")
+    setCurrentAmount((prev) => prev + 250) // Add 250ml per tap
   }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Main Header Section */}
-    <Header avatarChar="A" />
-    <View style={styles.mainHeader}>
-      <View style={styles.headerContent}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/activity')}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+      <View style={styles.mainHeader}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Hidratação</Text>
+          </View>
+          <TouchableOpacity>
+            <MaterialCommunityIcons name="dots-vertical" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Hidratação</Text>
         </View>
       </View>
-    </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Date Navigation */}

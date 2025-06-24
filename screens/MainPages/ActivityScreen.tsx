@@ -1,26 +1,16 @@
+"use client"
+
 import { useState } from "react"
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Dimensions, Image } from "react-native"
-import { ChevronLeft, ChevronRight, MapPin, Droplets } from "lucide-react-native"
-import { FireIcon } from "@/components/Icons/FireIcon"
-import { ShoeIcon } from "@/components/Icons/ShoeIcon"
-import { ProgressCircle } from "@/components/Icons/ProgressCircle"
-import { ProgressBar } from "@/components/Icons/ProgressBar"
-import Header from "@/components/Header"
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Dimensions } from "react-native"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { router } from "expo-router"
+import Header from "../../components/Header"
+import ProgressCircle from "../../components/ProgressCircle"
 
 const { width, height } = Dimensions.get("window")
 
 export default function HealthScreen() {
   const [currentDate, setCurrentDate] = useState(new Date())
-
-  const formatDate = (date: Date) => {
-    return date
-      .toLocaleDateString("pt-BR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      })
-      .replace(/^\w/, (c) => c.toUpperCase())
-  }
 
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(currentDate)
@@ -29,33 +19,36 @@ export default function HealthScreen() {
   }
 
   const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"]
-  const exerciseDays = [false, false, false, false, true, false, false] // Apenas quinta-feira marcada
-  const mindfulnessDays = [false, true, true, true, true, true, true] // Todos os dias exceto domingo
+  const exerciseDays = [false, false, false, false, true, false, false]
+  const mindfulnessDays = [false, true, true, true, true, true, true]
+
+  const handleHydrationPress = () => {
+    router.push("/hydratation")
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
-        avatarChar="A"
-      />
+      <Header avatarChar="A" />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.dateNavigation}>
           <TouchableOpacity onPress={() => navigateDate("prev")}>
-            <ChevronLeft size={24} color="#374151" />
+            <MaterialCommunityIcons name="chevron-left" size={24} color="#374151" />
           </TouchableOpacity>
 
           <Text style={styles.dateText}>Hoje</Text>
 
           <TouchableOpacity onPress={() => navigateDate("next")}>
-            <ChevronRight size={24} color="#374151" />
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#374151" />
           </TouchableOpacity>
         </View>
+
         <View style={styles.mainStats}>
           <View style={styles.sideStatItem}>
             <View style={styles.progressContainer}>
               <ProgressCircle progress={53} size={width * 0.18} color="#9CC9FF" />
               <View style={styles.progressContent}>
-                <MapPin size={16} color="#3B82F6" />
+                <MaterialCommunityIcons name="map-marker" size={16} color="#3B82F6" />
               </View>
             </View>
             <Text style={styles.sideStatValue}>5,31</Text>
@@ -66,7 +59,7 @@ export default function HealthScreen() {
             <View style={styles.progressContainer}>
               <ProgressCircle progress={65} size={width * 0.25} color="#9CC9FF" />
               <View style={styles.progressContent}>
-                <ShoeIcon size={24} color="#000" />
+                <MaterialCommunityIcons name="shoe-print" size={24} color="#000" />
               </View>
             </View>
             <Text style={styles.mainStatValue}>6.565</Text>
@@ -77,7 +70,7 @@ export default function HealthScreen() {
             <View style={styles.progressContainer}>
               <ProgressCircle progress={44} size={width * 0.18} color="#9CC9FF" />
               <View style={styles.progressContent}>
-                <FireIcon size={16} color="#F97316" />
+                <MaterialCommunityIcons name="fire" size={16} color="#F97316" />
               </View>
             </View>
             <Text style={styles.sideStatValue}>2.203</Text>
@@ -85,7 +78,8 @@ export default function HealthScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        {/* Hydration Card - Clickable */}
+        <TouchableOpacity style={styles.card} onPress={handleHydrationPress} activeOpacity={0.7}>
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>Hidratação</Text>
@@ -93,13 +87,13 @@ export default function HealthScreen() {
               <Text style={styles.cardSubtitle}>Hoje</Text>
             </View>
             <View style={styles.hydrationProgress}>
-              <ProgressBar progress={75} color="#9CC9FF" />
+              <ProgressCircle progress={20} size={60} color="#9CC9FF" strokeWidth={6} />
               <View style={styles.hydrationIcon}>
-                <Droplets size={20} color="#3B82F6" />
+                <MaterialCommunityIcons name="water" size={20} color="#3B82F6" />
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -111,7 +105,7 @@ export default function HealthScreen() {
             <View style={styles.weekProgress}>
               <View style={styles.weekDays}>
                 {weekDays.map((day, index) => (
-                  <View style={styles.dayContainer}>
+                  <View key={index} style={styles.dayContainer}>
                     <Text style={styles.dayLabel}>{day}</Text>
                     <View style={[styles.dayIndicator, exerciseDays[index] && styles.dayIndicatorActive]}>
                       {exerciseDays[index] && <Text style={styles.checkmark}>✓</Text>}
@@ -133,7 +127,7 @@ export default function HealthScreen() {
             <View style={styles.weekProgress}>
               <View style={styles.weekDays}>
                 {weekDays.map((day, index) => (
-                  <View style={styles.dayContainer}>
+                  <View key={index} style={styles.dayContainer}>
                     <Text style={styles.dayLabel}>{day}</Text>
                     <View style={[styles.dayIndicator, mindfulnessDays[index] && styles.dayIndicatorActive]}>
                       {mindfulnessDays[index] && <Text style={styles.checkmark}>✓</Text>}
@@ -153,52 +147,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F3F4F6",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: width * 0.02,
-    paddingVertical: height * 0.01,
-    backgroundColor: "#86D293",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 10,
-    minHeight: height * 0.04,
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoImage: {
-     width: Math.min(width * 0.5, 90),
-  height: Math.min(width * 0.15, 40),
-    resizeMode: "contain",
-  },
-  avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#79D457",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  refreshIcon: {
-    fontSize: 20,
-    color: "#374151",
   },
   content: {
     flex: 1,
