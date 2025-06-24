@@ -1,9 +1,12 @@
-import { Diary, DiaryWrite } from "@/types/mental/diary";
 import api from "../api";
 
 export const createDiary= async (data: FormData) => {
   try {
-    const response = await api.post("mental/diary/create/", data);
+    const response = await api.post("mental/diary/create/", data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   } catch (error: any) {
     if (error.response?.data?.detail) {

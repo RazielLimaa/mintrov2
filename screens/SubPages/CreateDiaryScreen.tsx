@@ -198,13 +198,59 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleSave = async () => {
-  // ... (suas validações de campos obrigatórios) ...
+  async function appendImageToFormData(formData: FormData, image: any) {
+  if (!image) return;
 
+  if (typeof window !== 'undefined' && window.document) {
+    // Estamos no navegador (web)
+
+    if (image instanceof File) {
+      // Já é um File do input
+      formData.append('photo', image, image.name);
+    } else if (typeof image === 'string' && image.startsWith('data:')) {
+      // base64 data url — converter para Blob
+      const res = await fetch(image);
+      const blob = await res.blob();
+      // Criar File com nome padrão
+      const file = new File([blob], 'photo.jpg', { type: blob.type });
+      formData.append('photo', file, file.name);
+    } else {
+      // Outros casos (url?), pode tentar fetch blob
+      const res = await fetch(image);
+      const blob = await res.blob();
+      const file = new File([blob], 'photo.jpg', { type: blob.type });
+      formData.append('photo', file, file.name);
+    }
+
+  } else {
+    // Estamos no React Native
+
+    // image deve ser uma URI (string)
+    let uri = image as string;
+
+    const originalFilename = uri.split('/').pop() || 'photo.jpg';
+    const filename = originalFilename.length > 100 ? originalFilename.substring(0, 100) : originalFilename;
+
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+
+    // No iOS remover file:// do início
+    if (Platform.OS === 'ios' && uri.startsWith('file://')) {
+      uri = uri.substring(7);
+    }
+
+    formData.append('photo', {
+      uri,
+      name: filename,
+      type,
+    } as any);
+  }
+}
+
+const handleSave = async () => {
   setIsSaving(true);
 
   try {
-    // 1. Combina a data e a hora
     const combinedDateTime = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
@@ -217,26 +263,15 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('content', notes);
-    formData.append('datetime', combinedDateTime.toISOString()); 
-    formData.append('mood', selectedSentiment as string); 
+    formData.append('datetime', combinedDateTime.toISOString());
+    formData.append('mood', selectedSentiment);
 
     selectedActivitiesIds.forEach(id => {
-    formData.append('activity[]', id.toString());
-  });
+      formData.append('activity[]', id.toString());
+    });
 
-    if (selectedImageUri) {
-      const filename = selectedImageUri.split('/').pop();
-      const match = /\.(\w+)$/.exec(filename || '');
-      const type = match ? `image/${match[1]}` : 'image/jpeg'; // Tipo MIME básico
+    await appendImageToFormData(formData, selectedImageUri);
 
-      formData.append('photo', {
-        uri: selectedImageUri,
-        name: filename || 'photo.jpg',
-        type: type,
-      } as any); 
-    }
-
-    // 6. Chama a API com o FormData
     await createDiary(formData);
 
     Alert.alert("Sucesso", "Diário criado com sucesso!");

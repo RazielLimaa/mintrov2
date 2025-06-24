@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 interface PhotoPickerProps {
   selectedImageUri: string | null;
-  onImageSelected: (uri: string | null) => void; // Callback quando a imagem é selecionada/removida
+  onImageSelected: (uri: string | null) => void;
 }
 
 const PhotoPicker: React.FC<PhotoPickerProps> = ({ selectedImageUri, onImageSelected }) => {
@@ -16,29 +16,30 @@ const PhotoPicker: React.FC<PhotoPickerProps> = ({ selectedImageUri, onImageSele
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Apenas imagens
-      allowsEditing: true, // Permite editar/cortar a imagem após a seleção
-      aspect: [4, 3], // Proporção para o corte (largura:altura)
-      quality: 1, // Qualidade máxima da imagem
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], // CORRETO
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+      base64: true 
     });
 
-    if (!result.canceled) { // Se o usuário selecionou uma imagem e não cancelou
-      onImageSelected(result.assets[0].uri); // Envia a URI da imagem para o componente pai
-    } else { // Se o usuário cancelou a seleção
-      onImageSelected(null); // Opcional: define a imagem como nula se cancelado
+    if (!result.canceled && result.assets.length > 0) {
+      const uri = result.assets[0].uri;
+      console.log('URI correta:', uri);
+      onImageSelected(uri);
+    } else {
+      onImageSelected(null);
     }
-  };
+  }; 
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Foto</Text>
       <TouchableOpacity style={styles.photoContainer} onPress={pickImage}>
         {selectedImageUri ? (
-          // Exibe a imagem selecionada
           <Image source={{ uri: selectedImageUri }} style={styles.selectedPhoto} />
         ) : (
-          // Exibe o placeholder quando nenhuma imagem foi selecionada
           <>
             <MaterialCommunityIcons name="image-outline" size={60} color="#BDC3C7" />
             <Text style={styles.photoChooseText}>Escolher Foto</Text>
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
   },
   selectedPhoto: {
     width: '100%',
-    height: 200, // Altura fixa para a imagem selecionada
+    height: 200,
     resizeMode: 'cover',
     borderRadius: 8,
   },
