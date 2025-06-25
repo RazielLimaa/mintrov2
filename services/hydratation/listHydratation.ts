@@ -1,16 +1,17 @@
-import api from "../api"
-import { Hydratation } from "@/types/health/hydratation"
+// services/hydratation/listHydratation.ts
+import api from "../api";
+import { Hydratation } from "@/types/health/hydratation";
+import { format } from "date-fns"; // Apenas o format é necessário aqui
 
-export const getHydratationList = async (date?: string): Promise<Hydratation[]> => {
+export const getHydratationList = async (date: Date = new Date()): Promise<Hydratation[]> => {
   try {
+    const formattedDate = format(date, "yyyy-MM-dd"); // Data no formato YYYY-MM-DD
     const response = await api.get<Hydratation[]>("physical/hydratation/", {
-      params: date ? { date } : {}
-    })
-    return response.data
+      params: { date: formattedDate }
+    });
+    return response.data;
   } catch (error: any) {
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail)
-    }
-    throw new Error("Erro ao tentar buscar diário de hidratação.")
+    console.error('Erro na API de Hidratação:', error);
+    return [];
   }
-}
+};

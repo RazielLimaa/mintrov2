@@ -119,7 +119,7 @@ const MindfulnessScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Mindfulness" onSavePress={() => {}} />
+      <FormHeader title="Mindfulness" onSavePress={() => {} } onBackPress={() => router.push('/(tabs)/activity')} />
 
       <View style={styles.weeklySummarySection}>
         <View style={styles.weekNavigation}>

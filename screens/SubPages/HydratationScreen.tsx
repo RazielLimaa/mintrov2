@@ -1,93 +1,116 @@
-"use client"
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import Header from "../../components/Header"; // Verifique se Header.tsx tem 'export default'
+import ProgressCircle from "../../components/ProgressCircle"; // Verifique se ProgressCircle.tsx tem 'export default'
 
-import React, { useEffect, useState } from "react"
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-  SafeAreaView,
-  Alert,
-} from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { router } from "expo-router"
-import Header from "@/components/Header"
-import FormHeader from "@/components/FormHeader"
-import ProgressCircle from "../../components/ProgressCircle"
-import WaterDropIcon from "../../components/WaterDropIcon"
-import { registerHydratationLog } from "@/services/hydratation/registerHydratation"
-import { getHydratationList } from "@/services/hydratation/listHydratation" 
-import { Hydratation } from "@/types/health/hydratation"
+import FormHeader from "../../components/FormHeader"; // Verifique se FormHeader.tsx tem 'export default'
 
-const { width, height } = Dimensions.get("window")
+import { registerHydratationLog } from "@/services/hydratation/registerHydratation";
+import { getHydratationList } from "@/services/hydratation/listHydratation";
+import { Hydratation } from "@/types/health/hydratation";
 
+import { format, isSameDay } from "date-fns";
+import { ptBR } from 'date-fns/locale';
+import WaterDropIcon from "@/components/WaterDropIcon";
+
+// FUNÇÃO DEFINIDA AQUI (FORA DO COMPONENTE)
 function formatDateToYYYYMMDD(date: Date): string {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, "0")
-  const day = date.getDate().toString().padStart(2, "0")
-  return `${year}-${month}-${day}`
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-const HydrationScreen: React.FC = () => {
-  const [currentAmount, setCurrentAmount] = useState(750)
+const { width, height } = Dimensions.get("window");
+
+export default function HydrationScreen() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
-  })
+    const d = new Date();
+    d.setHours(0, 0, 0, 0); // Zera hora para comparação de dia
+    return d;
+  });
 
-  const [hydrationLogs, setHydrationLogs] = useState<Hydratation[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [hydrationLogs, setHydrationLogs] = useState<Hydratation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const dailyGoal = 3750
-  const remaining = dailyGoal - currentAmount
-  const progress = (currentAmount / dailyGoal) * 100
+  const totalHydrationToday = hydrationLogs.reduce((sum, log) => {
+    return sum + (log.quantity || 0);
+  }, 0);
+
+  const dailyGoal = 3750;
+  const remaining = dailyGoal - totalHydrationToday;
+  const progress = (totalHydrationToday / dailyGoal) * 100;
+
+  const formatDateDisplay = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const isToday = isSameDay(date, today);
+    const isYesterday = isSameDay(date, yesterday);
+    const isTomorrow = isSameDay(date, tomorrow);
+
+    if (isToday) return "Hoje";
+    if (isYesterday) return "Ontem";
+    if (isTomorrow) return "Amanhã";
+    
+    return format(date, "EEEE, d 'de' MMMM", { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase());
+  };
+
+  const navigateDay = (direction: "prev" | "next") => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + (direction === "next" ? 1 : -1));
+    setSelectedDate(newDate);
+  };
 
   const handleAddWater = () => {
-    router.push("/registerhydratation")
-  }
+    router.push("/registerhydratation");
+  };
 
   useEffect(() => {
     const fetchHydrationData = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const data = await getHydratationList(formatDateToYYYYMMDD(selectedDate))
-        setHydrationLogs(data)
+        const data = await getHydratationList(selectedDate); // Passa o objeto Date, a função da API formata
+        setHydrationLogs(data);
       } catch (err: any) {
-        setError(err.message || "Erro ao carregar hidratação.")
+        setError(err.message || "Erro ao carregar hidratação.");
+        console.error("Erro ao buscar hidratação:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchHydrationData()
-  }, [selectedDate])
+    fetchHydrationData();
+  }, [selectedDate]);
 
   return (
     <SafeAreaView style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Hidratação" onSavePress={() => []} />
+      <FormHeader title="Hidratação" onSavePress={() => {}} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.dateNavigation}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigateDay("prev")}>
             <MaterialCommunityIcons name="chevron-left" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.dateText}>{formatDateToYYYYMMDD(selectedDate)}</Text>
-          <TouchableOpacity>
+          <Text style={styles.dateText}>{formatDateDisplay(selectedDate)}</Text>
+          <TouchableOpacity onPress={() => navigateDay("next")}>
             <MaterialCommunityIcons name="chevron-right" size={24} color="#333" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.mainContent}>
           <View style={styles.leftContent}>
-            <Text style={styles.currentAmount}>{currentAmount} ml</Text>
+            <Text style={styles.currentAmount}>{totalHydrationToday} ml</Text>
             <Text style={styles.remainingText}>
-              Faltam {remaining} ml para você atingir{"\n"}seu objetivo diário de {dailyGoal} ml
+              Faltam {Math.max(0, remaining)} ml para você atingir{"\n"}seu objetivo diário de {dailyGoal} ml
             </Text>
           </View>
           <View style={styles.progressContainer}>
@@ -100,14 +123,15 @@ const HydrationScreen: React.FC = () => {
 
         <View style={styles.historySection}>
           <Text style={styles.historyTitle}>Histórico</Text>
+          {/* USO DA FUNÇÃO formatDateToYYYYMMDD AQUI */}
           <Text style={styles.historyDate}>Data: {formatDateToYYYYMMDD(selectedDate)}</Text>
 
           {loading ? (
-            <Text>Carregando...</Text>
+            <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
           ) : error ? (
-            <Text style={{ color: "red" }}>{error}</Text>
+            <Text style={styles.errorText}>{error}</Text>
           ) : hydrationLogs.length === 0 ? (
-            <Text>Nenhum registro para essa data.</Text>
+            <Text style={styles.noDataText}>Nenhum registro de hidratação para essa data.</Text>
           ) : (
             hydrationLogs.map((log, index) => (
               <View key={index} style={styles.card}>
@@ -116,7 +140,7 @@ const HydrationScreen: React.FC = () => {
                     <Text style={styles.cardTitle}>Hidratação</Text>
                     <Text style={styles.cardValue}>{log.quantity} ml</Text>
                     <Text style={styles.cardSubtitle}>
-                      Registrado em {new Date(log.date).toLocaleDateString()}
+                      Registrado em {new Date(log.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   </View>
                   <View style={{ alignItems: "center", justifyContent: "center" }}>
@@ -134,23 +158,8 @@ const HydrationScreen: React.FC = () => {
       <TouchableOpacity style={styles.fab} onPress={handleAddWater}>
         <MaterialCommunityIcons name="plus" size={28} color="white" />
       </TouchableOpacity>
-
-      <View style={styles.bottomNav}>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="brain" size={24} color="#999" />
-          <Text style={styles.navLabel}>Mental</Text>
-        </View>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="heart" size={24} color="#4CAF50" />
-          <Text style={styles.navLabelSelected}>Saúde</Text>
-        </View>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="account" size={24} color="#999" />
-          <Text style={styles.navLabel}>Você</Text>
-        </View>
-      </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -237,23 +246,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    backgroundColor: "white",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingBottom: 20,
+  loadingIndicator: {
+    marginTop: 20,
   },
-  navItem: { alignItems: "center", justifyContent: "center" },
-  navLabel: { fontSize: 12, color: "#999", marginTop: 4 },
-  navLabelSelected: { fontSize: 12, color: "#4CAF50", fontWeight: "600", marginTop: 4 },
-})
-
-export default HydrationScreen
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+  },
+  noDataText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: 'gray',
+    fontSize: 16,
+  },
+});

@@ -1,15 +1,23 @@
 // services/exercise/listLogsThisWeek.ts
 import { ExerciseLog } from "@/types/health/exercise";
 import api from "../api";
+import { startOfWeek, endOfWeek, format } from "date-fns";
+import { ptBR } from 'date-fns/locale';
 
-export const getExerciseLogs = async (): Promise<ExerciseLog[]> => {
+export const getExerciseLogs = async (date: Date = new Date()): Promise<ExerciseLog[]> => {
   try {
-    const response = await api.get<ExerciseLog[]>("physical/exercise/log/");
+    const startDate = format(startOfWeek(date, { weekStartsOn: 0, locale: ptBR }), "yyyy-MM-dd");
+    const endDate = format(endOfWeek(date, { weekStartsOn: 0, locale: ptBR }), "yyyy-MM-dd");
+
+    const response = await api.get<ExerciseLog[]>("physical/exercise/log/", {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      }
+    });
     return response.data;
   } catch (error: any) {
-    if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    }
-    throw new Error("Erro ao tentar buscar registros de exercício.");
+    console.error('Erro na API de Exercício:', error);
+    return [];
   }
 };

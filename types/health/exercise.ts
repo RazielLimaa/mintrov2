@@ -12,7 +12,7 @@ export interface ExerciseLog{
     duration: number
     distance: number
     description: string
-    datetime: Date
+    datetime: string
 }
 
 
