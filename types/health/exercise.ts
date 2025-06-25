@@ -6,6 +6,7 @@ export interface Exercise{
 }
 
 export interface ExerciseLog{
+    type: string
     id: number
     user: number
     exercise: number

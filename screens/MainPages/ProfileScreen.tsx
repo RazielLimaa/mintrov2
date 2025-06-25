@@ -134,22 +134,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={handleProfileHeaderPress} style={styles.iconButton}>
-          <View style={styles.profilePlaceholder}>
-            <Text style={styles.profileText}>{avatarChar}</Text>
-          </View>
-        </TouchableOpacity>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>Mintros</Text>
-          <View style={styles.plantIconPlaceholder} />
-        </View>
-        <TouchableOpacity onPress={handleChatHeaderPress} style={styles.iconButton}>
-          <MaterialCommunityIcons name="chat-outline" size={24} color="#34495E" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+     <Header avatarChar="A" /> 
+     <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.formCardCommon}>
           <View style={styles.userInfo}>
             <View>

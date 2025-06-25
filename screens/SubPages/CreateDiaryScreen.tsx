@@ -1,425 +1,317 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Platform, Alert } from 'react-native';
-import { Appbar, TextInput, Card } from 'react-native-paper'; // Card ainda é usado para ActivityGridItem
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+"use client"
 
-import { getActivities } from '@/services/diary/listActivities';
-import { getActivityIconName } from '@/utils/activityIconMapper';
-import { Activity, MoodType } from '@/types/mental/diary';
+import type React from "react"
+import { useState } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Dimensions,
+  SafeAreaView,
+  Image,
+} from "react-native"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { router } from "expo-router"
+import Header from "@/components/Header"
 
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { ViewStyle } from 'react-native/types';
+const { width, height } = Dimensions.get("window")
 
-import NotesInput from '@/components/NotesInput'; // Caminho corrigido
-import PhotoPicker from '@/components/PhotoPicker'; // Caminho corrigido
-
-import { Objective } from '@/types/mental/objectives';
-import { getObjectiveList } from '@/services/objectives/listObjectives'; // Caminho corrigido: 'objects' para 'objectives'
-import FormHeader from '@/components/FormHeader'; // Importe o FormHeader
-import ObjectiveDisplayCard from '@/components/ObjectiveCard';
-import Header from '@/components/Header';
-import { createDiary } from '@/services/diary/createDiary';
-
-const { width } = Dimensions.get('window');
-const GRID_ITEM_MARGIN = 8;
-const GRID_ITEM_WIDTH_BASE = 80;
-
-interface SentimentOptionProps {
-  label: MoodType;
-  isSelected: boolean;
-  onPress: () => void;
+interface MoodOption {
+  id: string
+  label: string
+  imageSource: any
+  isSelected: boolean
 }
 
-const getSentimentIconName = (sentiment: MoodType) => {
-  switch (sentiment) {
-    case 'Excelente': return 'emoticon-excited-outline';
-    case 'Bom': return 'emoticon-happy-outline';
-    case 'Neutro': return 'emoticon-neutral-outline';
-    case 'Ruim': return 'emoticon-sad-outline';
-    case 'Péssimo': return 'emoticon-angry-outline';
-    default: return 'emoticon-neutral-outline';
-  }
-};
-
-const SentimentOption: React.FC<SentimentOptionProps> = ({ label, isSelected, onPress }) => {
-  const iconName = getSentimentIconName(label);
-  const iconColor = isSelected ? 'white' : '#666';
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.sentimentOption,
-        isSelected ? styles.sentimentOptionSelected : null,
-      ]}
-      onPress={onPress}
-    >
-      <MaterialCommunityIcons name={iconName} size={40} color={iconColor} />
-      <Text style={[styles.sentimentLabel, isSelected ? styles.sentimentLabelSelected : null]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-};
-
-interface ActivityGridItemProps {
-  label: string;
-  iconName: keyof typeof MaterialCommunityIcons.glyphMap;
-  isSelected: boolean;
-  onPress: () => void;
+interface ActivityOption {
+  id: string
+  label: string
+  isSelected: boolean
 }
 
-const ActivityGridItem: React.FC<ActivityGridItemProps> = ({ label, iconName, isSelected, onPress }) => {
-  const iconColor = isSelected ? 'white' : '#333';
-  return (
-    <TouchableOpacity
-      style={[
-        styles.activityGridItem,
-        isSelected ? styles.activityGridItemSelected : null,
-      ]}
-      onPress={onPress}
-    >
-      <MaterialCommunityIcons name={iconName} size={32} color={iconColor} />
-      <Text style={[styles.activityLabel, isSelected ? styles.activityLabelSelected : null]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-};
+const NewDiaryScreen: React.FC = () => {
+  const [title, setTitle] = useState("")
+  const [selectedDate, setSelectedDate] = useState("Ontem, 18 de junho")
+  const [selectedTime, setSelectedTime] = useState("11:16")
+  const [annotation, setAnnotation] = useState("")
 
-interface CreateDiaryScreenProps { }
+  const [moods, setMoods] = useState<MoodOption[]>([
+    { id: "excelente", label: "Excelente", imageSource: require("../assets/images/mood-excellent.png"), isSelected: false },
+    { id: "bem", label: "Bem", imageSource: require("../assets/images/mood-excellent.png"), isSelected: false },
+    { id: "neutro", label: "Neutro", imageSource: require("../assets/images/mood-neutral.png"), isSelected: false },
+    { id: "mal", label: "Mal", imageSource: require("../assets/images/mood-sad.png"), isSelected: false },
+    { id: "horrivel", label: "Horrível", imageSource: require("../assets/images/mood-cry.png"), isSelected: false },
+  ])
 
-const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
-  const [title, setTitle] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedTime, setSelectedTime] = useState<Date>(new Date());
-  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
-  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
-  const [selectedSentiment, setSelectedSentiment] = useState<MoodType>('Neutro');
-  const [selectedActivitiesIds, setSelectedActivitiesIds] = useState<number[]>([]); // Correção para number[]
-  const [notes, setNotes] = useState<string>('');
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [activities, setActivities] = useState<ActivityOption[]>([
+    { id: "ler1", label: "Ler", isSelected: false },
+    { id: "ler2", label: "Ler", isSelected: false },
+    { id: "ler3", label: "Ler", isSelected: false },
+    { id: "ler4", label: "Ler", isSelected: false },
+    { id: "ler5", label: "Ler", isSelected: false },
+    { id: "ler6", label: "Ler", isSelected: false },
+    { id: "ler7", label: "Ler", isSelected: false },
+    { id: "ler8", label: "Ler", isSelected: false },
+    { id: "ler9", label: "Ler", isSelected: false },
+    { id: "ler10", label: "Ler", isSelected: false },
+    { id: "ler11", label: "Ler", isSelected: false },
+    { id: "ler12", label: "Ler", isSelected: false },
+    { id: "ler13", label: "Ler", isSelected: false },
+    { id: "ler14", label: "Ler", isSelected: false },
+  ])
 
-  const [objectives, setObjectives] = useState<Objective[]>([]);
-
-  const [fetchedActivities, setFetchedActivities] = useState<Activity[]>([]);
-  const [loadingActivities, setLoadingActivities] = useState<boolean>(true);
-  const [errorActivities, setErrorActivities] = useState<string | null>(null);
-
-  const [fetchedObjectives, setFetchedObjectives] = useState<Objective[]>([]);
-  const [loadingObjectives, setLoadingObjectives] = useState<boolean>(true);
-  const [errorObjectives, setErrorObjectives] = useState<string | null>(null);
-  const [selectedObjectiveId, setSelectedObjectiveId] = useState<number | null>(null);
-
-  const sentiments: MoodType[] = ['Excelente', 'Bom', 'Neutro', 'Ruim', 'Péssimo'];
-
-  const [isSaving, setIsSaving] = useState<boolean>(false); 
-  const displayObjective = objectives.length > 0 ? objectives[0] : null;
-
-
-  useEffect(() => {
-    const fetchActivitiesData = async () => {
-      setLoadingActivities(true);
-      setErrorActivities(null);
-      try {
-        const data = await getActivities();
-        setFetchedActivities(data);
-      } catch (err: any) {
-        setErrorActivities(err.message || 'Falha ao carregar atividades.');
-        console.error('Erro ao buscar atividades:', err);
-      } finally {
-        setLoadingActivities(false);
-      }
-    };
-
-    const fetchObjectives = async () => {
-      setLoadingObjectives(true);
-      setErrorObjectives(null);
-      try {
-        const data = await getObjectiveList();
-        setObjectives(data);
-      } catch (err: any) {
-        setErrorObjectives(err.message || 'Falha ao carregar objetivos.');
-        console.error('Erro ao buscar objetivos:', err);
-      } finally {
-        setLoadingObjectives(false);
-      }
-    };
-
-    fetchObjectives();
-    fetchActivitiesData();
-  }, []);
-
-  const toggleActivity = (activityId: number) => { // Correção para number
-    setSelectedActivitiesIds(prev =>
-      prev.includes(activityId)
-        ? prev.filter(id => id !== activityId)
-        : [...prev, activityId]
-    );
-  };
-
-  const onChangeDate = (event: any, date?: Date) => {
-    setShowDatePicker(false);
-    if (Platform.OS === 'android') {
-      if (event.type === 'set' && date) {
-        setSelectedDate(date);
-      }
-    } else {
-      if (date) {
-        setSelectedDate(date);
-      }
-    }
-  };
-
-  const onChangeTime = (event: any, time?: Date) => {
-    setShowTimePicker(false);
-    if (Platform.OS === 'android') {
-      if (event.type === 'set' && time) {
-        setSelectedTime(time);
-      }
-    } else {
-      if (time) {
-        setSelectedTime(time);
-      }
-    }
-  };
-
-  const formatDeadline = (deadlineString: string) => {
-    const date = new Date(deadlineString);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
-  const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' };
-    return date.toLocaleDateString('pt-BR', options);
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  async function appendImageToFormData(formData: FormData, image: any) {
-  if (!image) return;
-
-  if (typeof window !== 'undefined' && window.document) {
-
-    if (image instanceof File) {
-      formData.append('photo', image, image.name);
-    } else if (typeof image === 'string' && image.startsWith('data:')) {
-      const res = await fetch(image);
-      const blob = await res.blob();
-      const file = new File([blob], 'photo.jpg', { type: blob.type });
-      formData.append('photo', file, file.name);
-    } else {
-      const res = await fetch(image);
-      const blob = await res.blob();
-      const file = new File([blob], 'photo.jpg', { type: blob.type });
-      formData.append('photo', file, file.name);
-    }
-
-  } else {
-    let uri = image as string;
-
-    const originalFilename = uri.split('/').pop() || 'photo.jpg';
-    const filename = originalFilename.length > 100 ? originalFilename.substring(0, 100) : originalFilename;
-
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
-
-    if (Platform.OS === 'ios' && uri.startsWith('file://')) {
-      uri = uri.substring(7);
-    }
-
-    formData.append('photo', {
-      uri,
-      name: filename,
-      type,
-    } as any);
+  const handleBack = () => {
+    router.back()
   }
-}
 
-const handleSave = async () => {
-  setIsSaving(true);
-
-  try {
-    const combinedDateTime = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      selectedDate.getDate(),
-      selectedTime.getHours(),
-      selectedTime.getMinutes(),
-      selectedTime.getSeconds()
-    );
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', notes);
-    formData.append('datetime', combinedDateTime.toISOString());
-    formData.append('mood', selectedSentiment);
-
-    selectedActivitiesIds.forEach(id => {
-      formData.append('activity', id.toString());
-    });
-
-    await appendImageToFormData(formData, selectedImageUri);
-
-    await createDiary(formData);
-
-    Alert.alert("Sucesso", "Diário criado com sucesso!");
-    router.back();
-
-  } catch (error: any) {
-    const errorMessage = error.message || "Erro ao criar diário. Tente novamente.";
-    Alert.alert("Erro", errorMessage);
-    console.error("Erro ao criar diário:", error);
-  } finally {
-    setIsSaving(false);
+  const handleSave = () => {
+    console.log("Saving diary entry:", {
+      title,
+      selectedDate,
+      selectedTime,
+      selectedMoods: moods.filter((m) => m.isSelected),
+      selectedActivities: activities.filter((a) => a.isSelected),
+      annotation,
+    })
+    router.back()
   }
-};
+
+  const handleMoodSelect = (moodId: string) => {
+    setMoods(moods.map((mood) => (mood.id === moodId ? { ...mood, isSelected: !mood.isSelected } : mood)))
+  }
+
+  const handleActivitySelect = (activityId: string) => {
+    setActivities(
+      activities.map((activity) =>
+        activity.id === activityId ? { ...activity, isSelected: !activity.isSelected } : activity,
+      ),
+    )
+  }
+
+  const handleChoosePhoto = () => {
+    console.log("Choose photo pressed")
+  }
+
+  const MoodIcon: React.FC<{ mood: MoodOption }> = ({ mood }) => {
+    return (
+      <TouchableOpacity
+        style={[styles.moodOption, mood.isSelected && styles.moodOptionSelected]}
+        onPress={() => handleMoodSelect(mood.id)}
+      >
+        <View style={styles.moodIconContainer}>
+          <Image source={{ uri: mood.imageSource }} style={styles.moodImage} resizeMode="contain" />
+        </View>
+        <Text style={[styles.moodLabel, mood.isSelected && styles.moodLabelSelected]}>{mood.label}</Text>
+      </TouchableOpacity>
+    )
+  }
 
   return (
-    <View style={styles.container}>
-    <Header
-      avatarChar="A" />
-      <FormHeader title="Novo Diário" onBackPress={() => router.back()} onSavePress={handleSave} />
+    <SafeAreaView style={styles.container}>
 
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.inputSection}>
+     <Header avatarChar="A" />
+
+      {/* White Header Section */}
+      <View style={styles.whiteHeader}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Novo Diário</Text>
+          </View>
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={styles.saveButton}>Salvar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Title Input */}
+        <View style={styles.section}>
           <TextInput
-            mode="outlined"
+            style={styles.titleInput}
             placeholder="Título"
             value={title}
             onChangeText={setTitle}
-            style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
+            placeholderTextColor="#999"
           />
         </View>
 
-        <View style={styles.dateTimeContainer}>
-          <TouchableOpacity style={styles.dateTimeButton} onPress={() => setShowDatePicker(true)}>
-            <MaterialCommunityIcons name="calendar-month-outline" size={24} color="#666" />
-            <Text style={styles.dateTimeText}>{formatDate(selectedDate)}</Text>
-            <MaterialCommunityIcons name="chevron-down" size={24} color="#666" />
+        {/* Date and Time Selectors */}
+        <View style={styles.dateTimeSection}>
+          <TouchableOpacity style={styles.dateTimeButton}>
+            <MaterialCommunityIcons name="calendar" size={20} color="#666" />
+            <Text style={styles.dateTimeText}>{selectedDate}</Text>
+            <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
           </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              testID="datePicker"
-              value={selectedDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={onChangeDate}
-            />
-          )}
 
-          <TouchableOpacity style={styles.dateTimeButton} onPress={() => setShowTimePicker(true)}>
-            <MaterialCommunityIcons name="clock-outline" size={24} color="#666" />
-            <Text style={styles.dateTimeText}>{formatTime(selectedTime)}</Text>
-            <MaterialCommunityIcons name="chevron-down" size={24} color="#666" />
+          <TouchableOpacity style={styles.dateTimeButton}>
+            <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
+            <Text style={styles.dateTimeText}>{selectedTime}</Text>
+            <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
           </TouchableOpacity>
-          {showTimePicker && (
-            <DateTimePicker
-              testID="timePicker"
-              value={selectedTime}
-              mode="time"
-              is24Hour={true}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={onChangeTime}
-            />
-          )}
         </View>
 
+        {/* Mood Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Como você está se sentindo?</Text>
-          <View style={styles.sentimentRow}>
-            {sentiments.map((s) => (
-              <SentimentOption
-                key={s}
-                label={s}
-                isSelected={selectedSentiment === s}
-                onPress={() => setSelectedSentiment(s)}
-              />
+          <View style={styles.moodGrid}>
+            {moods.map((mood) => (
+              <MoodIcon key={mood.id} mood={mood} />
             ))}
           </View>
         </View>
 
+        {/* Activities Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>O que você tem feito?</Text>
-          {loadingActivities ? (
-            <ActivityIndicator size="large" color="#0000ff" />
-          ) : errorActivities ? (
-            <Text>Erro ao carregar atividades: {errorActivities}</Text>
-          ) : fetchedActivities.length === 0 ? (
-            <Text>Nenhuma atividade encontrada.</Text>
-          ) : (
-            <View style={styles.activityGrid}>
-              {fetchedActivities.map((activity) => (
-                <ActivityGridItem
-                  key={activity.id}
-                  label={activity.name}
-                  iconName={getActivityIconName(activity.name)}
-                  isSelected={selectedActivitiesIds.includes(Number(activity.id))}
-                  onPress={() => toggleActivity(Number(activity.id))}
+          <View style={styles.activityGrid}>
+            {activities.map((activity) => (
+              <TouchableOpacity
+                key={activity.id}
+                style={[styles.activityItem, activity.isSelected && styles.activityItemSelected]}
+                onPress={() => handleActivitySelect(activity.id)}
+              >
+                <MaterialCommunityIcons
+                  name="file-document-outline"
+                  size={24}
+                  color={activity.isSelected ? "white" : "#333"}
                 />
-              ))}
-            </View>
-          )}
-        </View>
-
-        {loadingObjectives ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Objetivos</Text>
-            <ActivityIndicator size="large" color="#0000ff" />
+                <Text style={[styles.activityLabel, activity.isSelected && styles.activityLabelSelected]}>
+                  {activity.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        ) : errorObjectives ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Objetivos</Text>
-            <Text style={styles.errorText}>Erro ao carregar objetivos: {errorObjectives}</Text>
-          </View>
-        ) : (
-          // Só renderiza a seção se houver objetivos para mostrar
-          objectives.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Objetivos</Text>
-              <ObjectiveDisplayCard
-                objectiveTitle={displayObjective?.activity.name || 'Objetivo'}
-                objectiveSubtitle={`Meta até ${displayObjective ? formatDeadline(displayObjective.deadline) : ''}`}
-              />
+        </View>
+
+        {/* Objectives Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Objetivos</Text>
+          <View style={styles.objectiveItem}>
+            <MaterialCommunityIcons name="check" size={20} color="#4CAF50" />
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#333" style={styles.objectiveIcon} />
+            <View style={styles.objectiveText}>
+              <Text style={styles.objectiveTitle}>Ler</Text>
+              <Text style={styles.objectiveSubtitle}>Sequencia de 2 dias</Text>
             </View>
-          )
-        )}
-
-        <View style={styles.section}>
-          <NotesInput notes={notes} onChangeNotes={setNotes} />
+          </View>
         </View>
 
+        {/* Annotation Section */}
         <View style={styles.section}>
-          <PhotoPicker selectedImageUri={selectedImageUri} onImageSelected={setSelectedImageUri} />
+          <Text style={styles.sectionTitle}>Anotação</Text>
+          <TextInput
+            style={styles.annotationInput}
+            placeholder="Coloque uma quantidade personalizada"
+            value={annotation}
+            onChangeText={setAnnotation}
+            multiline
+            numberOfLines={4}
+            placeholderTextColor="#999"
+          />
         </View>
+
+        {/* Photo Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Foto</Text>
+          <TouchableOpacity style={styles.photoSection} onPress={handleChoosePhoto}>
+            <MaterialCommunityIcons name="image-outline" size={48} color="#CCC" />
+            <Text style={styles.choosePhotoText}>Escolher Foto</Text>
+            <Text style={styles.photoSubtext}>Clique para adicionar uma foto</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
-    </View>
-  );
-};
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <View style={styles.navItem}>
+          <MaterialCommunityIcons name="brain" size={24} color="#4CAF50" />
+          <Text style={styles.navLabelSelected}>Mental</Text>
+        </View>
+        <View style={styles.navItem}>
+          <MaterialCommunityIcons name="heart" size={24} color="#999" />
+          <Text style={styles.navLabel}>Saúde</Text>
+        </View>
+        <View style={styles.navItem}>
+          <MaterialCommunityIcons name="account" size={24} color="#999" />
+          <Text style={styles.navLabel}>Você</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: "#F8F8F8",
   },
-  appbar: {
-    backgroundColor: '#c8e6c9',
-    justifyContent: 'space-between',
+  greenHeader: {
+    backgroundColor: "#8BC34A",
+    height: 100,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 40,
   },
-  appbarTitle: {
-    marginLeft: -10,
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
   },
   mintrLogo: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#388e3c',
-    marginRight: -10,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
   },
-  scrollViewContent: {
-    paddingBottom: 20,
+  whiteHeader: {
+    backgroundColor: "white",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backButton: {
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  saveButton: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
+  scrollView: {
+    flex: 1,
   },
   section: {
     paddingHorizontal: 16,
@@ -427,158 +319,191 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 12,
   },
-  inputSection: {
+  titleInput: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  dateTimeSection: {
+    flexDirection: "row",
     paddingHorizontal: 16,
     marginTop: 20,
-  },
-  textInput: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-  },
-  textInputOutline: {
-    borderRadius: 8,
-    borderColor: '#e0e0e0',
-  } as ViewStyle,
-  dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    marginTop: 20,
+    gap: 12,
   },
   dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#E0E0E0",
+    gap: 8,
   },
   dateTimeText: {
-    fontSize: 16,
-    color: '#333',
-    marginHorizontal: 8,
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
   },
-  sentimentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+  moodGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
   },
-  sentimentOption: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    borderRadius: 10,
+  moodOption: {
+    flex: 1,
+    alignItems: "center",
+    padding: 8,
   },
-  sentimentOptionSelected: {
-    backgroundColor: '#8BC34A',
+  moodOptionSelected: {
+    // Add selected styling if needed
   },
-  sentimentLabel: {
+  moodIconContainer: {
+    marginBottom: 8,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moodImage: {
+    width: 50,
+    height: 50,
+  },
+  moodLabel: {
     fontSize: 12,
-    marginTop: 5,
-    color: '#333',
+    color: "#333",
+    textAlign: "center",
+    fontWeight: "500",
   },
-  sentimentLabelSelected: {
-    color: 'white',
-    fontWeight: 'bold',
+  moodLabelSelected: {
+    color: "#4CAF50",
+    fontWeight: "600",
   },
   activityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    marginBottom: 20,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
-  activityGridItem: {
-    width: GRID_ITEM_WIDTH_BASE,
-    height: GRID_ITEM_WIDTH_BASE,
-    borderRadius: 10,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: GRID_ITEM_MARGIN,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 2,
-    borderWidth: 2,
-    borderColor: 'transparent',
+  activityItem: {
+    width: (width - 48) / 5,
+    height: (width - 48) / 5,
+    backgroundColor: "white",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    marginBottom: 8,
   },
-  activityGridItemSelected: {
-    borderColor: '#8BC34A',
-    backgroundColor: '#8BC34A',
+  activityItemSelected: {
+    backgroundColor: "#4CAF50",
+    borderColor: "#4CAF50",
   },
   activityLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 5,
+    fontSize: 10,
+    color: "#333",
+    textAlign: "center",
+    fontWeight: "500",
+    marginTop: 4,
   },
   activityLabelSelected: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
   },
-  objectiveCard: { // ESTES ESTILOS SÃO DO ObjectiveDisplayCard ANTIGO, NÃO SERÃO USADOS PELO DiaryObjectiveSelectionCard DIRETAMENTE
-    borderRadius: 10,
-    backgroundColor: 'white',
-    padding: 15,
-  },
-  objectiveCardContent: { // IDEM
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  objectiveCardText: { // IDEM
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 10,
-  },
-  objectiveCardSubText: { // IDEM
-    fontSize: 14,
-    color: 'gray',
-    marginLeft: 5,
-  },
-  notesInput: { // ESTE ESTILO FOI MOVIDO PARA DiaryNotesInput.tsx
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  photoContainer: { // ESTE ESTILO FOI MOVIDO PARA DiaryPhotoPicker.tsx
-    backgroundColor: 'white',
-    borderRadius: 10,
+  objectiveItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 30,
-    overflow: 'hidden',
+    borderColor: "#E0E0E0",
   },
-  selectedPhoto: { // IDEM
-    width: '100%',
-    height: 200,
-    resizeMode: 'cover',
-    borderRadius: 8,
+  objectiveIcon: {
+    marginLeft: 8,
+    marginRight: 12,
   },
-  photoChooseText: { // IDEM
+  objectiveText: {
+    flex: 1,
+  },
+  objectiveTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8BC34A',
-    marginTop: 10,
+    fontWeight: "600",
+    color: "#333",
   },
-  photoHintText: { // IDEM
+  objectiveSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
+  },
+  annotationInput: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+  photoSection: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 40,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderStyle: "dashed",
+  },
+  choosePhotoText: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  photoSubtext: {
+    fontSize: 14,
+    color: "#999",
+    marginTop: 4,
+  },
+  bottomSpacing: {
+    height: 100,
+  },
+  bottomNav: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    backgroundColor: "white",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    paddingBottom: 20,
+  },
+  navItem: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navLabel: {
     fontSize: 12,
-    color: 'gray',
-    marginTop: 5,
+    color: "#999",
+    marginTop: 4,
   },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
+  navLabelSelected: {
+    fontSize: 12,
+    color: "#4CAF50",
+    fontWeight: "600",
+    marginTop: 4,
   },
-});
+})
 
-export default CreateDiaryScreen;
+export default NewDiaryScreen

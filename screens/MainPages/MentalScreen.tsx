@@ -230,13 +230,13 @@ export default function MentalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
     paddingHorizontal: Dimensions.get('window').width * 0.05,
   },
   sectionTitle: {

@@ -12,7 +12,7 @@ export function getMoodVisuals(mood: MoodType): MoodVisuals {
     case "Excelente":
       return { iconSource: require('@/assets/images/mood-excellent.png'), color: "#22C55E" }; // Exemplo de cor
     case "Bom":
-      return { iconSource: require('@/assets/images/mood-good.png'), color: "#8BC34A" };
+      return { iconSource: require('@/assets/images/mood-smile.png'), color: "#8BC34A" };
     case "Neutro":
       return { iconSource: require('@/assets/images/mood-neutral.png'), color: "#6B7280" };
     case "Ruim":

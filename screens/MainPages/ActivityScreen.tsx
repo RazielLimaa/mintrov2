@@ -14,6 +14,7 @@ import { Hydratation } from '@/types/health/hydratation';
 import { getMindfulnessList } from "@/services/mindfulness/listMindfulnessLog";
 import { getExerciseLogs } from "@/services/exercise/listExerciseLog";
 import { getHydratationList } from "@/services/hydratation/listHydratation";
+import ShoeIcon from "@/components/ShoeIcon";
 
 const { width, height } = Dimensions.get("window");
 
@@ -206,7 +207,7 @@ export default function HealthScreen() {
                 <View style={styles.progressContainer}>
                   <ProgressCircle progress={Math.min(currentDayStats.steps / 100, 100)} size={width * 0.25} color="#9CC9FF" strokeWidth={6} />
                   <View style={styles.progressContent}>
-                    <MaterialCommunityIcons name="shoe-print" size={24} color="#000" />
+                    <ShoeIcon size={24} color="#000" />
                   </View>
                 </View>
                 <Text style={styles.mainStatValue}>{currentDayStats.steps}</Text>

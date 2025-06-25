@@ -32,19 +32,20 @@ const ObjectiveDisplayCard: React.FC<ObjectiveDisplayCardProps> = ({
 const styles = StyleSheet.create({
   objectiveCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 8,
     },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
     marginHorizontal: width * 0.05,
+    marginBottom: 16,
   },
   objectiveLeft: {
     flexDirection: 'row',
