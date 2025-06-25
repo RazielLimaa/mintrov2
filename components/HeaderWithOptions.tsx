@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Appbar } from 'react-native-paper'; // Certifique-se de ter react-native-paper instalado
 import { router } from 'expo-router'; // Para a ação de voltar, se usar Expo Router
+import VerticalDotsIcon from './Icons/VerticalDotsIcon';
 
-interface FormHeaderProps {
+interface HeaderWithOptionsProps {
   title: string;
   onBackPress?: () => void; // Opcional, se não quiser usar router.back()
-  onSavePress: () => void;
 }
 
-const FormHeader: React.FC<FormHeaderProps> = ({ title, onBackPress, onSavePress }) => {
+const HeaderWithOptions: React.FC<HeaderWithOptionsProps> = ({ title, onBackPress }) => {
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
@@ -22,8 +22,8 @@ const FormHeader: React.FC<FormHeaderProps> = ({ title, onBackPress, onSavePress
     <SafeAreaView style={styles.appbar}>
       <Appbar.BackAction onPress={handleBack} />
       <Appbar.Content title={title} titleStyle={styles.appbarTitle} />
-      <TouchableOpacity onPress={onSavePress}>
-        <Text style={styles.saveButtonText}>Salvar</Text>
+      <TouchableOpacity>
+        <VerticalDotsIcon/>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -50,4 +50,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FormHeader;
+export default HeaderWithOptions;

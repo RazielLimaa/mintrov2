@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import FormHeader from '@/components/FormHeader';
 import { getMindfulnessList } from '@/services/mindfulness/listMindfulnessLog';
 import { MindfulnessLog } from '@/types/health/mindfulness';
+import HeaderWithOptions from '@/components/HeaderWithOptions';
 
 interface DayIndicatorProps {
   dayLetter: string;
@@ -119,7 +120,7 @@ const MindfulnessScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Mindfulness" onSavePress={() => {} } onBackPress={() => router.push('/(tabs)/activity')} />
+      <HeaderWithOptions title="Mindfulness"  onBackPress={() => router.push('/(tabs)/activity')} />
 
       <View style={styles.weeklySummarySection}>
         <View style={styles.weekNavigation}>

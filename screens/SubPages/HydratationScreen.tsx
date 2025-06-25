@@ -14,6 +14,7 @@ import { Hydratation } from "@/types/health/hydratation";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import WaterDropIcon from "@/components/WaterDropIcon";
+import HeaderWithOptions from "@/components/HeaderWithOptions";
 
 // FUNÇÃO DEFINIDA AQUI (FORA DO COMPONENTE)
 function formatDateToYYYYMMDD(date: Date): string {
@@ -93,7 +94,7 @@ export default function HydrationScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Hidratação" onSavePress={() => {}} />
+      <HeaderWithOptions title="Hidratação"/>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.dateNavigation}>

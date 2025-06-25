@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import FormHeader from '@/components/FormHeader';
 import { ExerciseLog } from '@/types/health/exercise';
 import { getExerciseLogs } from '@/services/exercise/listExerciseLog';
+import HeaderWithOptions from '@/components/HeaderWithOptions';
 
 interface DayIndicatorProps {
   dayLetter: string;
@@ -115,7 +116,7 @@ const [weekDays, setWeekDays] = useState<WeekDay[]>(
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Exercícios" onSavePress={() => {}} />
+      <HeaderWithOptions title="Exercícios"/>
 
       <View style={styles.weeklySummarySection}>
         <View style={styles.weekNavigation}>

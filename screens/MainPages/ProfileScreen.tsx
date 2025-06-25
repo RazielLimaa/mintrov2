@@ -1,14 +1,50 @@
-import { StyleSheet, View, Text, SafeAreaView, ScrollView, Dimensions, TouchableOpacity,} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  SafeAreaView,
+  ScrollView,
+  Dimensions,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '@/components/Header';
 
-const { width } = Dimensions.get('window');
-const cardHorizontalMargin = 1.5;
+import { Goal } from '@/types/user/goal';
+import { getGoals } from '@/services/goals/getGoals';
 
-const threeColumnCardWidth = (width - 40 - (2 * (width * cardHorizontalMargin / 100))) / 3;
-const twoColumnCardWidth = (width - 40 - (2 * (width * 1 / 100))) / 2;
+import { User } from '@/types/user/user';
+import { getUser } from '@/services/user/getUser';
+
+import StatCard from '@/components/StatCard';
+
+// NOVO: Importar os nomes das fontes Poppins do pacote google-fonts
+import { 
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+  Poppins_700Bold
+} from '@expo-google-fonts/poppins';
+
+
+const { width } = Dimensions.get('window');
+const cardGap = 10;
+const screenContentPaddingHorizontal = 20;
+
+const threeColumnCardWidth = (width - (screenContentPaddingHorizontal * 2) - (cardGap * (3 - 1))) / 3;
+const twoColumnCardWidth = (width - (screenContentPaddingHorizontal * 2) - (cardGap * (2 - 1))) / 2;
+
 
 export default function ProfileScreen() {
+  const [fetchedUser, setFetchedUser] = useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [errorUser, setErrorUser] = useState<string | null>(null);
+
+  const [userGoals, setUserGoals] = useState<Goal | null>(null);
+  const [loadingGoals, setLoadingGoals] = useState(true);
+  const [errorGoals, setErrorGoals] = useState<string | null>(null);
+
   const handleEditProfile = () => {
     console.log('Editar perfil');
   };
@@ -20,23 +56,54 @@ export default function ProfileScreen() {
   const handleProfileHeaderPress = () => console.log('Perfil pressionado (header)');
   const handleChatHeaderPress = () => console.log('Chat pressionado');
 
-  const user = {
-    name: 'Alixandre',
-    joinYear: 2024,
-    avatarChar: 'A',
-  };
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoadingUser(true);
+      setErrorUser(null);
+      try {
+        const data = await getUser();
+        setFetchedUser(data);
+      } catch (err: any) {
+        setErrorUser(err.message || 'Falha ao carregar dados do usuário.');
+        console.error('Erro ao buscar usuário:', err);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
 
-  const statistics = [
-    { iconName: 'notebook-outline' as const, value: 36, label: 'Diários registrados' },
-    { iconName: 'meditation' as const, value: 18, label: 'Sessões de Mindfulness' },
-    { iconName: 'run' as const, value: 24, label: 'Exercícios físicos' },
-  ];
+    const fetchUserGoals = async () => {
+      setLoadingGoals(true);
+      setErrorGoals(null);
+      try {
+        const data = await getGoals();
+        setUserGoals(data);
+      } catch (err: any) {
+        setErrorGoals(err.message || 'Falha ao carregar metas.');
+        console.error('Erro ao buscar metas:', err);
+      } finally {
+        setLoadingGoals(false);
+      }
+    };
 
-  const goals = [
-    { iconName: 'water' as const, value: 2, label: 'Litros', unit: 'por dia' },
-    { iconName: 'calendar-sync-outline' as const, value: 3, label: 'Dias', unit: 'na semana' },
-    { iconName: 'calendar-check-outline' as const, value: 5, label: 'Dias', unit: 'na semana' },
-  ];
+    fetchUserData();
+    fetchUserGoals();
+  }, []);
+
+  const displayName = fetchedUser?.username || 'Carregando...';
+  const joinYear = fetchedUser?.created_at ? new Date(fetchedUser.created_at).getFullYear() : 'N/A';
+  const avatarChar = fetchedUser?.username ? fetchedUser.username.charAt(0).toUpperCase() : 'A';
+
+  const statistics = fetchedUser ? [
+    { iconName: 'notebook-outline' as const, value: fetchedUser.diarys_registers, label: 'Diários registrados' },
+    { iconName: 'meditation' as const, value: fetchedUser.mindfulness_registers, label: 'Sessões de Mindfulness' },
+    { iconName: 'run' as const, value: fetchedUser.exercises_registers, label: 'Exercícios físicos' },
+  ] : [];
+
+  const transformedGoals = userGoals ? [
+    { iconName: 'water' as const, value: userGoals.hydration_goal, label: 'ml', unit: 'por dia' },
+    { iconName: 'dumbbell' as const, value: userGoals.exercise_goal, label: 'Minutos', unit: 'por dia' },
+    { iconName: 'brain' as const, value: userGoals.mindfulness_goal, label: 'Minutos', unit: 'por dia' },
+  ] : [];
 
   const achievements = [
     {
@@ -51,26 +118,49 @@ export default function ProfileScreen() {
       title: 'Mente Equilibrada',
       description: '10 sessões mindfulness',
     },
+    {
+      iconName: 'food-apple-outline' as const,
+      iconBackgroundColor: '#34D399',
+      title: 'Hábitos Saudáveis',
+      description: '5 dias de alimentação saudável',
+    },
+    {
+      iconName: 'medal-outline' as const,
+      iconBackgroundColor: '#FBBF24',
+      title: 'Atleta do Mês',
+      description: '300 minutos de exercício',
+    },
   ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header
-        avatarChar='A'
-      />
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={handleProfileHeaderPress} style={styles.iconButton}>
+          <View style={styles.profilePlaceholder}>
+            <Text style={styles.profileText}>{avatarChar}</Text>
+          </View>
+        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>Mintros</Text>
+          <View style={styles.plantIconPlaceholder} />
+        </View>
+        <TouchableOpacity onPress={handleChatHeaderPress} style={styles.iconButton}>
+          <MaterialCommunityIcons name="chat-outline" size={24} color="#34495E" />
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.formCardCommon}>
           <View style={styles.userInfo}>
             <View>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.joinDate}>Entrou em {user.joinYear}</Text>
+              <Text style={styles.userName}>{displayName}</Text>
+              <Text style={styles.joinDate}>Entrou em {joinYear}</Text>
               <TouchableOpacity onPress={handleEditProfile}>
                 <Text style={styles.editProfileLink}>Editar perfil</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>{user.avatarChar}</Text>
+              <Text style={styles.avatarText}>{avatarChar}</Text>
             </View>
           </View>
         </View>
@@ -78,38 +168,48 @@ export default function ProfileScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Estatísticas</Text>
         </View>
-        <View style={styles.metricCardGrid}>
-          {statistics.map((stat, index) => (
-            <View style={[styles.formCardCommon, styles.statMetricCardCustom]}>
-              <View style={styles.statMetricCardContent}>
-                <MaterialCommunityIcons name={stat.iconName} size={28} color="#7F8C8D" style={styles.statMetricCardIcon} />
-                <Text style={styles.statMetricCardValueText}>{stat.value}</Text>
-                <Text style={styles.statMetricCardLabelText}>{stat.label}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        {loadingUser ? (
+          <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
+        ) : errorUser ? (
+          <Text style={[styles.errorText, { marginHorizontal: 20 }]}>Erro ao carregar estatísticas: {errorUser}</Text>
+        ) : statistics.length === 0 ? (
+          <Text style={[styles.noDataText, { marginHorizontal: 20 }]}>Nenhuma estatística disponível.</Text>
+        ) : (
+          <View style={styles.metricCardGrid}>
+            {statistics.map((stat, index) => (
+              <StatCard
+                key={index}
+                iconName={stat.iconName}
+                value={stat.value}
+                label={stat.label}
+                cardWidth={threeColumnCardWidth}
+              />
+            ))}
+          </View>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Minhas Metas</Text>
         </View>
-        <View style={styles.metricCardGrid}>
-          {goals.map((goal, index) => (
-            <View style={[styles.formCardCommon, styles.statMetricCardCustom]}>
-              <View style={styles.statMetricCardContent}>
-                <MaterialCommunityIcons
-                  name={goal.iconName}
-                  size={28}
-                  color={index === 0 ? '#3498DB' : '#7F8C8D'}
-                  style={styles.statMetricCardIcon}
-                />
-                <Text style={styles.statMetricCardValueText}>{goal.value}</Text>
-                <Text style={styles.statMetricCardLabelText}>{goal.label}</Text>
-                {goal.unit && <Text style={styles.statMetricCardUnitText}>{goal.unit}</Text>}
-              </View>
-            </View>
-          ))}
-        </View>
+        {loadingGoals ? (
+          <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
+        ) : errorGoals ? (
+          <Text style={[styles.errorText, { marginHorizontal: 20 }]}>Erro ao carregar metas: {errorGoals}</Text>
+        ) : transformedGoals.length === 0 ? (
+          <Text style={[styles.noDataText, { marginHorizontal: 20 }]}>Nenhuma meta definida.</Text>
+        ) : (
+          <View style={styles.metricCardGrid}>
+            {transformedGoals.map((goal, index) => (
+              <StatCard
+                key={index}
+                iconName={goal.iconName}
+                value={goal.value}
+                label={goal.label}
+                cardWidth={threeColumnCardWidth}
+              />
+            ))}
+          </View>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Conquistas</Text>
@@ -117,21 +217,29 @@ export default function ProfileScreen() {
             <Text style={styles.showAllLink}>Mostrar todas</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.achievementGrid}>
-          {achievements.map((achievement, index) => (
-            <View style={[styles.formCardCommon, styles.achievementItemCustom]}>
-              <View style={styles.achievementItemContent}>
-                <View style={[styles.achievementIconBackground, { backgroundColor: achievement.iconBackgroundColor }]}>
-                  <MaterialCommunityIcons name={achievement.iconName} size={28} color="white" />
-                </View>
-                <View style={styles.achievementTextContainer}>
-                  <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                  <Text style={styles.achievementDescription}>{achievement.description}</Text>
+        {achievements.length === 0 ? (
+          <Text style={styles.noDataText}>Nenhuma conquista disponível.</Text>
+        ) : (
+          <ScrollView
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.achievementCarouselContent}
+          >
+            {achievements.map((achievement, index) => (
+              <View key={index} style={[styles.achievementItemCustom, { width: twoColumnCardWidth }]}>
+                <View style={styles.achievementItemContent}>
+                  <View style={[styles.achievementIconBackground, { backgroundColor: achievement.iconBackgroundColor }]}>
+                    <MaterialCommunityIcons name={achievement.iconName} size={28} color="white" />
+                  </View>
+                  <View style={styles.achievementTextContainer}>
+                    <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                    <Text style={styles.achievementDescription}>{achievement.description}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </ScrollView>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -143,7 +251,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   scrollViewContent: {
+    marginTop: 10,
     paddingBottom: 20,
+    paddingHorizontal: screenContentPaddingHorizontal,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -168,7 +278,7 @@ const styles = StyleSheet.create({
   profileText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
   },
   logoContainer: {
     flexDirection: 'row',
@@ -176,7 +286,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
     color: '#34495E',
     marginRight: 4,
   },
@@ -198,7 +308,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-    marginHorizontal: 20,
     marginBottom: 20,
   },
 
@@ -209,19 +318,21 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
     color: '#2C3E50',
     marginBottom: 4,
   },
   joinDate: {
     fontSize: 14,
+    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
     color: '#7F8C8D',
     marginBottom: 8,
   },
   editProfileLink: {
     fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
     color: '#3498DB',
-    fontWeight: '600',
+    // fontWeight: '600', // Removido, fontFamily já define o peso
   },
   avatarPlaceholder: {
     width: 70,
@@ -233,7 +344,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
     color: 'white',
   },
 
@@ -241,70 +352,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
     marginTop: 20,
     marginBottom: 15,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
     color: '#2C3E50',
   },
   showAllLink: {
     fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
     color: '#3498DB',
-    fontWeight: '600',
+    // fontWeight: '600', // Removido
   },
 
   metricCardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 20 - (width * (cardHorizontalMargin / 100)),
+    justifyContent: 'space-between',
+    gap: cardGap,
   },
   statMetricCardCustom: {
     width: threeColumnCardWidth,
-    marginHorizontal: width * (cardHorizontalMargin / 100),
-    padding: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
   },
-  statMetricCardContent: {
-    alignItems: 'center',
-  },
-  statMetricCardIcon: {
-    marginBottom: 8,
-  },
-  statMetricCardValueText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  statMetricCardLabelText: {
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#7F8C8D',
-  },
-  statMetricCardUnitText: {
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#7F8C8D',
-    marginTop: 2,
-  },
+  // As propriedades de estilo dentro do StatCard (como statMetricCardContent, etc.)
+  // são gerenciadas pelo próprio componente StatCard.tsx
+  // Você precisará aplicar os fontFamilys lá também.
 
-  achievementGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 20 - (width * (1 / 100)),
+  achievementCarouselContent: {
+    gap: cardGap,
+    alignItems: 'flex-start',
   },
   achievementItemCustom: {
     width: twoColumnCardWidth,
-    marginHorizontal: width * (1 / 100),
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 15,
-    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 10,
   },
   achievementItemContent: {
     flexDirection: 'row',
@@ -323,12 +413,31 @@ const styles = StyleSheet.create({
   },
   achievementTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
     color: '#2C3E50',
     marginBottom: 4,
   },
   achievementDescription: {
     fontSize: 12,
+    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
     color: '#7F8C8D',
+  },
+  loadingIndicator: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
+  },
+  noDataText: {
+    color: 'gray',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
   },
 });
