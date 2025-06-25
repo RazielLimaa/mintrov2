@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   achievementTitle: {
     fontSize: 16,
-    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
+    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_700Bold
     color: '#2C3E50',
     marginBottom: 4,
   },

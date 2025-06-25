@@ -202,19 +202,15 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
   if (!image) return;
 
   if (typeof window !== 'undefined' && window.document) {
-    // Estamos no navegador (web)
 
     if (image instanceof File) {
-      // Já é um File do input
       formData.append('photo', image, image.name);
     } else if (typeof image === 'string' && image.startsWith('data:')) {
-      // base64 data url — converter para Blob
       const res = await fetch(image);
       const blob = await res.blob();
       const file = new File([blob], 'photo.jpg', { type: blob.type });
       formData.append('photo', file, file.name);
     } else {
-      // Outros casos (url?), pode tentar fetch blob
       const res = await fetch(image);
       const blob = await res.blob();
       const file = new File([blob], 'photo.jpg', { type: blob.type });
@@ -222,9 +218,6 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
     }
 
   } else {
-    // Estamos no React Native
-
-    // image deve ser uma URI (string)
     let uri = image as string;
 
     const originalFilename = uri.split('/').pop() || 'photo.jpg';
@@ -233,7 +226,6 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
 
-    // No iOS remover file:// do início
     if (Platform.OS === 'ios' && uri.startsWith('file://')) {
       uri = uri.substring(7);
     }
@@ -266,7 +258,7 @@ const handleSave = async () => {
     formData.append('mood', selectedSentiment);
 
     selectedActivitiesIds.forEach(id => {
-      formData.append('activity[]', id.toString());
+      formData.append('activity', id.toString());
     });
 
     await appendImageToFormData(formData, selectedImageUri);
