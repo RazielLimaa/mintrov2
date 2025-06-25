@@ -1,9 +1,9 @@
 import api from "../api";
-import { MindfulnessLog } from "@/types/health/mindfulness";
+import { MindfulnessLog, MindfulnessLogWrite } from "@/types/health/mindfulness";
 
-export const registerMindfulnessLog= async (data: MindfulnessLog) => {
+export const registerMindfulnessLog= async (data: MindfulnessLogWrite) => {
   try {
-    const response = await api.post("mental/mindfulness/log/register", data);
+    const response = await api.post("mental/mindfulness/log/register/", data);
     return response.data;
   } catch (error: any) {
     if (error.response?.data?.detail) {

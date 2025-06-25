@@ -12,18 +12,17 @@ import { TextInput, Menu, Button, ActivityIndicator } from 'react-native-paper'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import Header from '@/components/Header'
 import FormHeader from '@/components/FormHeader'
-import { registerExerciseLog } from '@/services/exercise/registerExerciseLog'
-import { getExerciseList } from '@/services/exercise/listExercise'
-import { Exercise } from '@/types/health/exercise'
+import { Mindfulness } from '@/types/health/mindfulness'
+import { getMindfulnessList } from '@/services/mindfulness/listMindfulness'
+import { registerMindfulnessLog } from '@/services/mindfulness/registerMindfulnessLog'
 
-const RegisterExerciseScreen: React.FC = () => {
-  const [exerciseList, setExerciseList] = useState<Exercise[]>([])
-  const [exerciseId, setExerciseId] = useState<number | null>(null)
+const RegisterMindfulnessScreen: React.FC = () => {
+  const [mindfulnessList, setMindfulnessList] = useState<Mindfulness[]>([])
+  const [mindfulnessId, setMindfulnessId] = useState<number | null>(null)
   const [menuVisible, setMenuVisible] = useState(false)
 
-  const [duration, setDuration] = useState<string>('30')
-  const [distance, setDistance] = useState<string>('') // opcional
-  const [description, setDescription] = useState<string>('Corrida matinal')
+  const [duration, setDuration] = useState<string>('10')
+  const [description, setDescription] = useState<string>('Sessão de meditação guiada')
   const [datetime, setDatetime] = useState<Date>(new Date())
 
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -32,19 +31,19 @@ const RegisterExerciseScreen: React.FC = () => {
   const [loadingSave, setLoadingSave] = useState(false)
 
   useEffect(() => {
-    const fetchExercises = async () => {
+    const fetchMindfulness = async () => {
       setLoadingExercises(true)
       try {
-        const data = await getExerciseList()
-        setExerciseList(data)
-        if (data.length > 0) setExerciseId(data[0].id)
+        const data = await getMindfulnessList()
+        setMindfulnessList(data)
+        if (data.length > 0) setMindfulnessId(data[0].id)
       } catch (error: any) {
-        Alert.alert('Erro', error.message || 'Não foi possível carregar exercícios.')
+        Alert.alert('Erro', error.message || 'Não foi possível carregar práticas de mindfulness.')
       } finally {
         setLoadingExercises(false)
       }
     }
-    fetchExercises()
+    fetchMindfulness()
   }, [])
 
   function formatDatetimeToISO(date: Date): string {
@@ -56,7 +55,7 @@ const RegisterExerciseScreen: React.FC = () => {
     return `${yyyy}-${mm}-${dd}T${hh}:${min}`
   }
 
-  const onChangeDate = (event: any, selectedDate?: Date) => {
+  const onChangeDate = (_: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios')
     if (selectedDate) {
       const newDate = new Date(datetime)
@@ -65,7 +64,7 @@ const RegisterExerciseScreen: React.FC = () => {
     }
   }
 
-  const onChangeTime = (event: any, selectedTime?: Date) => {
+  const onChangeTime = (_: any, selectedTime?: Date) => {
     setShowTimePicker(Platform.OS === 'ios')
     if (selectedTime) {
       const newDate = new Date(datetime)
@@ -75,25 +74,24 @@ const RegisterExerciseScreen: React.FC = () => {
   }
 
   const handleSave = async () => {
-    if (!exerciseId) {
-      Alert.alert('Erro', 'Selecione um exercício.')
+    if (!mindfulnessId) {
+      Alert.alert('Erro', 'Selecione uma prática.')
       return
     }
 
     setLoadingSave(true)
     const data = {
-      exercise: exerciseId,
+      mindfulness: mindfulnessId,
       duration: parseInt(duration, 10),
-      distance: distance ? parseFloat(distance) : undefined,
-      description: description,
+      description,
       datetime: formatDatetimeToISO(datetime),
     }
 
     try {
-      await registerExerciseLog(data)
-      Alert.alert('Sucesso', 'Exercício registrado com sucesso!')
+      await registerMindfulnessLog(data)
+      Alert.alert('Sucesso', 'Prática de mindfulness registrada com sucesso!')
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível registrar o exercício.')
+      Alert.alert('Erro', error.message || 'Não foi possível registrar a prática.')
     } finally {
       setLoadingSave(false)
     }
@@ -102,12 +100,12 @@ const RegisterExerciseScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Registrar Exercício" onSavePress={handleSave} />
+      <FormHeader title="Registrar Mindfulness" onSavePress={handleSave} />
 
       <View style={styles.formContent}>
-        {/* Exercício select */}
+        {/* Prática select */}
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Exercício</Text>
+          <Text style={styles.inputLabel}>Prática</Text>
           {loadingExercises ? (
             <ActivityIndicator animating size="small" />
           ) : (
@@ -121,17 +119,17 @@ const RegisterExerciseScreen: React.FC = () => {
                   style={styles.menuButton}
                   contentStyle={{ justifyContent: 'space-between' }}
                 >
-                  {exerciseId
-                    ? exerciseList.find((ex) => ex.id === exerciseId)?.name || 'Selecione'
+                  {mindfulnessId
+                    ? mindfulnessList.find((ex) => ex.id === mindfulnessId)?.name || 'Selecione'
                     : 'Selecione'}
                 </Button>
               }
             >
-              {exerciseList.map((exercise) => (
+              {mindfulnessList.map((exercise) => (
                 <Menu.Item
                   key={exercise.id}
                   onPress={() => {
-                    setExerciseId(exercise.id)
+                    setMindfulnessId(exercise.id)
                     setMenuVisible(false)
                   }}
                   title={exercise.name}
@@ -187,20 +185,6 @@ const RegisterExerciseScreen: React.FC = () => {
             outlineStyle={styles.textInputOutline as ViewStyle}
           />
         </View>
-
-        {/* Distância */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Distância (km)</Text>
-          <TextInput
-            mode="outlined"
-            value={distance}
-            onChangeText={setDistance}
-            keyboardType="numeric"
-            placeholder="Opcional"
-            style={styles.textInput}
-            outlineStyle={styles.textInputOutline as ViewStyle}
-          />
-        </View>
       </View>
     </View>
   )
@@ -223,4 +207,4 @@ const styles = StyleSheet.create({
   menuButton: { justifyContent: 'space-between' },
 })
 
-export default RegisterExerciseScreen
+export default RegisterMindfulnessScreen

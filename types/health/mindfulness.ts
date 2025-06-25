@@ -7,8 +7,15 @@ export interface Mindfulness{
 export interface MindfulnessLog{
     id: number
     user: number
-    mindfulness: number
+    mindfulness: Mindfulness
     duration: number
     description: string
     datetime: Date
+}
+
+export interface MindfulnessLogWrite{
+    mindfulness: number
+    duration: number
+    description: string
+    datetime: string
 }

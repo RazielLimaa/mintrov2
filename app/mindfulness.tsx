@@ -1,9 +1,9 @@
-import ActivityScreen from "@/screens/SubPages/ExercisesScreen";
+import MindfulnessScreen from "@/screens/SubPages/MindfulnessScreen";
 import { Provider as PaperProvider } from 'react-native-paper';
 
 export default function App() {
   return(
   <PaperProvider>
-    <ActivityScreen />;
+    <MindfulnessScreen />;
   </PaperProvider>)
 }

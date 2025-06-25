@@ -5,8 +5,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Header from '@/components/Header';
 import FormHeader from '@/components/FormHeader';
-import { ExerciseLog } from '@/types/health/exercise';
-import { getExerciseLogs } from '@/services/exercise/listExerciseLog';
+import { getMindfulnessList } from '@/services/mindfulness/listMindfulnessLog';
+import { MindfulnessLog } from '@/types/health/mindfulness';
 
 interface DayIndicatorProps {
   dayLetter: string;
@@ -55,30 +55,34 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ name, details, durationText
   );
 };
 
-const ActivityScreen: React.FC = () => {
+const MindfulnessScreen: React.FC = () => {
   interface WeekDay {
-  id: string
-  letter: string
-  date: Date | null
-  exercised: boolean
-}
+    id: string;
+    letter: string;
+    date: Date | null;
+    exercised: boolean;
+  }
 
-const [weekDays, setWeekDays] = useState<WeekDay[]>(
-  [...Array(7)].map((_, i) => ({
-    id: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][i],
-    letter: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][i],
-    date: null,
-    exercised: false,
-  }))
-);
+  const [weekDays, setWeekDays] = useState<WeekDay[]>(
+    [...Array(7)].map((_, i) => ({
+      id: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][i],
+      letter: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][i],
+      date: null,
+      exercised: false,
+    }))
+  );
+
+  const [logs, setLogs] = useState<MindfulnessLog[]>([]);
 
   useEffect(() => {
-    const loadExerciseLogs = async () => {
+    const loadMindfulnessLogs = async () => {
       try {
-        const logs = await getExerciseLogs();
+        const data = await getMindfulnessList();
+        setLogs(data);
+
         const today = new Date();
-        const dayOfWeek = today.getDay();
         const start = new Date(today);
+        const dayOfWeek = today.getDay();
         start.setDate(today.getDate() - dayOfWeek);
         start.setHours(0, 0, 0, 0);
 
@@ -86,7 +90,7 @@ const [weekDays, setWeekDays] = useState<WeekDay[]>(
           const d = new Date(start);
           d.setDate(start.getDate() + i);
 
-          const exercised = logs.some((log) => {
+          const exercised = data.some((log) => {
             const logDate = new Date(log.datetime);
             return (
               logDate.getFullYear() === d.getFullYear() &&
@@ -109,13 +113,13 @@ const [weekDays, setWeekDays] = useState<WeekDay[]>(
       }
     };
 
-    loadExerciseLogs();
+    loadMindfulnessLogs();
   }, []);
 
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Exercícios" onSavePress={() => {}} />
+      <FormHeader title="Mindfulness" onSavePress={() => {}} />
 
       <View style={styles.weeklySummarySection}>
         <View style={styles.weekNavigation}>
@@ -126,9 +130,9 @@ const [weekDays, setWeekDays] = useState<WeekDay[]>(
 
         <View style={styles.summaryNumbers}>
           <Text style={styles.completedDays}>{weekDays.filter(d => d.exercised).length}</Text>
-          <Text style={styles.summaryText}> de 7 dias com exercícios</Text>
+          <Text style={styles.summaryText}> de 7 dias com práticas</Text>
         </View>
-        <Text style={styles.exercisedTotal}>Você se exercitou um total de {weekDays.filter(d => d.exercised).length} vez(es)</Text>
+        <Text style={styles.exercisedTotal}>Você praticou mindfulness {weekDays.filter(d => d.exercised).length} vez(es)</Text>
 
         <View style={styles.dayIndicatorsRow}>
           {weekDays.map(day => (
@@ -142,20 +146,45 @@ const [weekDays, setWeekDays] = useState<WeekDay[]>(
         </View>
       </View>
 
-      <View style={styles.historySection}>
+        <View style={styles.historySection}>
         <Text style={styles.historyTitle}>Histórico</Text>
         <Text style={styles.historyDate}>Hoje, {new Date().toLocaleDateString()}</Text>
-        <ActivityCard
-          name="Corrida"
-          details="1km - 30min"
-          durationText="30 min"
-          onPress={() => console.log('Corrida clicada')}
-        />
-      </View>
+        {logs.filter(log => {
+            const logDate = new Date(log.datetime)
+            const today = new Date()
+            return (
+            logDate.getFullYear() === today.getFullYear() &&
+            logDate.getMonth() === today.getMonth() &&
+            logDate.getDate() === today.getDate()
+            )
+        }).length > 0 ? (
+            logs
+            .filter(log => {
+                const logDate = new Date(log.datetime)
+                const today = new Date()
+                return (
+                logDate.getFullYear() === today.getFullYear() &&
+                logDate.getMonth() === today.getMonth() &&
+                logDate.getDate() === today.getDate()
+                )
+            })
+            .map((log, index) => (
+                <ActivityCard
+                key={log.id ?? index}
+                name={log.mindfulness.name ?? 'Prática'}
+                details={log.description || 'Sem descrição'}
+                durationText={`${log.duration} min`}
+                onPress={() => {}}
+                />
+            ))
+        ) : (
+            <Text>Nenhum registro hoje.</Text>
+        )}
+        </View>
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => router.push('/registerexercise')}
+        onPress={() => router.push('/registermindfulness')}
       >
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
@@ -186,8 +215,8 @@ const styles = StyleSheet.create({
   activityName: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   activityDetails: { fontSize: 14, color: 'gray', marginTop: 4 },
   activityDuration: { fontSize: 16, fontWeight: 'bold', color: '#2e7d32' },
-  addButton: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#81c784', borderRadius: 30, width: 60, height: 60, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
+  addButton: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#81c784', borderRadius: 30, width: 60, height: 60, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   addButtonText: { color: 'white', fontSize: 30, lineHeight: 30 },
 });
 
-export default ActivityScreen;
+export default MindfulnessScreen;
