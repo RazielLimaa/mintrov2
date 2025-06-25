@@ -39,11 +39,11 @@ const NewDiaryScreen: React.FC = () => {
   const [annotation, setAnnotation] = useState("")
 
   const [moods, setMoods] = useState<MoodOption[]>([
-    { id: "excelente", label: "Excelente", imageSource: require("../assets/images/mood-excellent.png"), isSelected: false },
-    { id: "bem", label: "Bem", imageSource: require("../assets/images/mood-excellent.png"), isSelected: false },
-    { id: "neutro", label: "Neutro", imageSource: require("../assets/images/mood-neutral.png"), isSelected: false },
-    { id: "mal", label: "Mal", imageSource: require("../assets/images/mood-sad.png"), isSelected: false },
-    { id: "horrivel", label: "Horrível", imageSource: require("../assets/images/mood-cry.png"), isSelected: false },
+    { id: "excelente", label: "Excelente", imageSource: require("@/assets/images/mood-excellent.png"), isSelected: false },
+    { id: "bem", label: "Bem", imageSource: require("@/assets/images/mood-excellent.png"), isSelected: false },
+    { id: "neutro", label: "Neutro", imageSource: require("@/assets/images/mood-neutral.png"), isSelected: false },
+    { id: "mal", label: "Mal", imageSource: require("@/assets/images/mood-sad.png"), isSelected: false },
+    { id: "horrivel", label: "Horrível", imageSource: require("@/assets/images/mood-cry.png"), isSelected: false },
   ])
 
   const [activities, setActivities] = useState<ActivityOption[]>([
@@ -102,7 +102,7 @@ const NewDiaryScreen: React.FC = () => {
         onPress={() => handleMoodSelect(mood.id)}
       >
         <View style={styles.moodIconContainer}>
-          <Image source={{ uri: mood.imageSource }} style={styles.moodImage} resizeMode="contain" />
+          <Image source={mood.imageSource} style={styles.moodImage} resizeMode="contain" />
         </View>
         <Text style={[styles.moodLabel, mood.isSelected && styles.moodLabelSelected]}>{mood.label}</Text>
       </TouchableOpacity>
@@ -229,22 +229,6 @@ const NewDiaryScreen: React.FC = () => {
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="brain" size={24} color="#4CAF50" />
-          <Text style={styles.navLabelSelected}>Mental</Text>
-        </View>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="heart" size={24} color="#999" />
-          <Text style={styles.navLabel}>Saúde</Text>
-        </View>
-        <View style={styles.navItem}>
-          <MaterialCommunityIcons name="account" size={24} color="#999" />
-          <Text style={styles.navLabel}>Você</Text>
-        </View>
-      </View>
     </SafeAreaView>
   )
 }
