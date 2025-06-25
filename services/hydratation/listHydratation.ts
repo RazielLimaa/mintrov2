@@ -1,7 +1,7 @@
 import api from "../api"
 import { Hydratation } from "@/types/health/hydratation"
 
-export const getHydratationList = async (date?: Date): Promise<Hydratation[]> => {
+export const getHydratationList = async (date?: string): Promise<Hydratation[]> => {
   try {
     const response = await api.get<Hydratation[]>("physical/hydratation/", {
       params: date ? { date } : {}

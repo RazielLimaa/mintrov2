@@ -95,7 +95,7 @@ export default function HealthScreen() {
           </View>
         </TouchableOpacity>
 
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/exercises')}>
           <View style={styles.cardHeader}>
             <View style={styles.cardLeft}>
               <Text style={styles.cardTitle}>Dias com Exercício</Text>
@@ -115,9 +115,9 @@ export default function HealthScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/mindfulness')}>
           <View style={styles.cardHeader}>
             <View style={styles.cardLeft}>
               <Text style={styles.cardTitle}>Dias com Mindfulness</Text>
@@ -137,7 +137,7 @@ export default function HealthScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   )

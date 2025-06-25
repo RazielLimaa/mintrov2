@@ -1,9 +1,14 @@
+import FormHeader from '@/components/FormHeader';
+import Header from '@/components/Header';
 import { router } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Platform } from 'react-native';
+
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Appbar, TextInput, IconButton, Card } from 'react-native-paper';
-
-// --- Interfaces para Props ---
+import { registerHydratationLog } from '@/services/hydratation/registerHydratation';
 
 interface QuantityCounterProps {
   label: string;
@@ -12,7 +17,6 @@ interface QuantityCounterProps {
   initialQuantity?: number;
 }
 
-// Componente reutilizável para o contador de quantidade (Copo, Garrafa, etc.)
 const QuantityCounter: React.FC<QuantityCounterProps> = ({
   label,
   volume,
@@ -24,7 +28,7 @@ const QuantityCounter: React.FC<QuantityCounterProps> = ({
   const increment = () => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
-    onQuantityChange(volume, newQuantity); // Envia o volume e a nova quantidade para o pai
+    onQuantityChange(volume, newQuantity); 
   };
 
   const decrement = () => {
@@ -62,6 +66,8 @@ interface QuantitiesState {
 }
 
 const RegisterHydrationScreen: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [quantities, setQuantities] = useState<QuantitiesState>({
     '250': 0,
@@ -70,6 +76,13 @@ const RegisterHydrationScreen: React.FC = () => {
     '1000': 0,
   });
 
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // meses de 0-11
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const handleQuantityChange = (volumeMl: number, newQuantity: number) => {
     setQuantities(prevQuantities => ({
       ...prevQuantities,
@@ -77,45 +90,70 @@ const RegisterHydrationScreen: React.FC = () => {
     }));
   };
 
-  const handleSave = () => {
-    let totalHydration: number = 0;
-    // Soma as quantidades das opções predefinidas
-    for (const volumeKey in quantities) {
-      if (Object.prototype.hasOwnProperty.call(quantities, volumeKey)) {
-        const volume = parseInt(volumeKey, 10);
-        totalHydration += volume * quantities[volumeKey as keyof QuantitiesState];
-      }
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios'); // iOS mantém o modal aberto
+    if (date) {
+      setSelectedDate(date);
     }
-    // Adiciona a quantidade personalizada, se houver
-    if (customAmount && !isNaN(parseFloat(customAmount))) {
-      totalHydration += parseFloat(customAmount);
-    }
-
-    console.log('Total de Hidratação Registrado:', totalHydration, 'ml');
-    console.log('Quantidades por tipo:', quantities);
-    console.log('Quantidade Personalizada:', customAmount);
   };
+
+  
+const handleSave = async () => {
+  let totalHydration = 0;
+
+  // Soma as quantidades das opções predefinidas
+  for (const volumeKey in quantities) {
+    if (Object.prototype.hasOwnProperty.call(quantities, volumeKey)) {
+      const volume = parseInt(volumeKey, 10);
+      totalHydration += volume * quantities[volumeKey as keyof QuantitiesState];
+    }
+  }
+
+  // Adiciona a quantidade personalizada, se válida
+  if (customAmount && !isNaN(parseFloat(customAmount))) {
+    totalHydration += parseFloat(customAmount);
+  }
+
+  // Monta o objeto para envio
+  const dataToSend = {
+    quantity: totalHydration,
+    date: formatDate(selectedDate),
+  };
+
+  try {
+    const result = await registerHydratationLog(dataToSend);
+    router.back()
+    console.log('Hidratação registrada com sucesso:', result);
+  } catch (error: any) {
+    console.error('Erro ao registrar hidratação:', error.message);
+  }
+};
 
   return (
     <View style={styles.container}>
-      {/* Barra Superior (Appbar) */}
-      <Appbar.Header style={styles.appbar}>
-        <Appbar.BackAction onPress={() => router.push('/hydratation')} />
-        <Appbar.Content title="Registrar Hidratação" titleStyle={styles.appbarTitle} />
-        {/* CORREÇÃO: Envolvendo o texto Mintr💧 em Appbar.Action */}
-        
-        <Appbar.Action icon="check" color="green" onPress={handleSave} />
-      </Appbar.Header>
+      <Header avatarChar='A'/>
+      <FormHeader title='Registrar Hidratação' onSavePress={handleSave}/>
 
-      {/* Seção de Data */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data</Text>
-        <Card style={styles.dateCard} elevation={1}>
-          <Text style={styles.dateText}>Hoje</Text>
-        </Card>
+        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+          <Card style={styles.dateCard} elevation={1}>
+            <Text style={styles.dateText}>
+              {selectedDate.toLocaleDateString('pt-BR')}
+            </Text>
+          </Card>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+          />
+        )}
       </View>
 
-      {/* Seção de Escolha de Opções */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Escolha uma opção ou adicione uma personalizada</Text>
         <Card style={styles.optionsCard} elevation={1}>
@@ -149,7 +187,6 @@ const RegisterHydrationScreen: React.FC = () => {
         </Card>
       </View>
 
-      {/* Seção de Quantidade Personalizada */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quantidade Personalizada</Text>
         <TextInput
@@ -157,7 +194,10 @@ const RegisterHydrationScreen: React.FC = () => {
           placeholder="Coloque uma quantidade personalizada"
           keyboardType="numeric" // Teclado numérico
           value={customAmount}
-          onChangeText={setCustomAmount}
+          onChangeText={text => {
+            const filtered = text.replace(/[^0-9]/g, '');
+            setCustomAmount(filtered);
+          }}
           style={styles.customInput}
           outlineStyle={styles.customInputOutline} // Estilo da borda externa
         />
