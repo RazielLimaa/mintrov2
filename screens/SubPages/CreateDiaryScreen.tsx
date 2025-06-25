@@ -211,7 +211,6 @@ const CreateDiaryScreen: React.FC<CreateDiaryScreenProps> = () => {
       // base64 data url — converter para Blob
       const res = await fetch(image);
       const blob = await res.blob();
-      // Criar File com nome padrão
       const file = new File([blob], 'photo.jpg', { type: blob.type });
       formData.append('photo', file, file.name);
     } else {

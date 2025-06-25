@@ -1,11 +1,16 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native"
+import { useEffect, useState } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import Header from "@/components/Header"
 import { router } from "expo-router"
+import { Activity } from "@/types/mental/diary"
+import { getActivities } from "@/services/diary/listActivities"
+import FormHeader from "@/components/FormHeader"
+import { registerObjectiveLog } from "@/services/objectives/createObjective"
+import { ObjectiveWrite } from "@/types/mental/objectives"
 
 const { width } = Dimensions.get("window")
 
@@ -46,88 +51,97 @@ const PeriodOption: React.FC<PeriodOptionProps> = ({ label, isSelected, onPress 
 const CreateObjectiveScreen: React.FC = () => {
   const [selectedObjective, setSelectedObjective] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
+  const [objectives, setObjectives] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const objectives = [
-    { id: "ler", label: "Ler", icon: "file-document-outline" },
-    { id: "escrever", label: "Ler", icon: "file-document-outline" },
-    { id: "meditar", label: "Ler", icon: "file-document-outline" },
-    { id: "correr", label: "Ler", icon: "file-document-outline" },
-    { id: "caminhar", label: "Ler", icon: "file-document-outline" },
-    { id: "nadar", label: "Ler", icon: "file-document-outline" },
-    { id: "estudar", label: "Ler", icon: "file-document-outline" },
-    { id: "cozinhar", label: "Ler", icon: "file-document-outline" },
-    { id: "dormir", label: "Ler", icon: "file-document-outline" },
-    { id: "hidratar", label: "Ler", icon: "file-document-outline" },
-    { id: "exercitar", label: "Ler", icon: "file-document-outline" },
-    { id: "yoga", label: "Ler", icon: "file-document-outline" },
-    { id: "alongar", label: "Ler", icon: "file-document-outline" },
-    { id: "extra", label: "Ler", icon: "file-document-outline" },
-  ]
+  useEffect(() => {
+    const fetchObjectives = async () => {
+      try {
+        const data = await getActivities()
+        setObjectives(data)
+      } catch (error) {
+        console.error("Erro ao buscar atividades:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const handleSave = () => {
-    console.log("Objetivo Selecionado:", selectedObjective)
-    console.log("Período Selecionado:", selectedPeriod)
+    fetchObjectives()
+  }, [])
+
+  const handleSave = async () => {
+  if (!selectedObjective || !selectedPeriod) {
+    alert("Selecione um objetivo e um período antes de salvar.")
+    return
   }
 
+  const data: ObjectiveWrite = {
+    activity: parseInt(selectedObjective),
+    period: selectedPeriod as '1w' | '2w' | '3w',
+  }
+
+  try {
+    await registerObjectiveLog(data)
+    alert("Objetivo registrado com sucesso!")
+    router.back()
+  } catch (error: any) {
+    console.error("Erro ao registrar objetivo:", error)
+    alert(error.message || "Erro ao registrar objetivo.")
+  }
+}
+
   return (
-    <><Header
-      avatarChar="A" /><View style={styles.container}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={() => router.push('/(tabs)/activity')}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Criar Objetivo</Text>
-            </View>
-            <TouchableOpacity onPress={handleSave}>
-              <Text style={styles.saveButton}>Salvar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+    <>
+      <Header avatarChar="A" />
+      <FormHeader title="Criar Objetivo" onSavePress={handleSave}/>
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Objectives Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Escolha um objetivo</Text>
-            <View style={styles.objectiveGrid}>
-              {objectives.map((obj) => (
-                <ObjectiveGridItem
-                  key={obj.id}
-                  label={obj.label}
-                  icon={obj.icon}
-                  isSelected={selectedObjective === obj.id}
-                  onPress={() => setSelectedObjective(obj.id)} />
-              ))}
-            </View>
+            {loading ? (
+              <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 20 }} />
+            ) : (
+              <View style={styles.objectiveGrid}>
+                {objectives.map((obj) => (
+                  <ObjectiveGridItem
+                    key={obj.id}
+                    label={obj.name}
+                    icon={"file-document-outline"}
+                    isSelected={selectedObjective === obj.id.toString()}
+                    onPress={() => setSelectedObjective(obj.id.toString())}
+                  />
+                ))}
+              </View>
+            )}
           </View>
 
-          {/* Period Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Período</Text>
             <View style={styles.periodCard}>
               <PeriodOption
                 label="1 Semana"
-                isSelected={selectedPeriod === "1 Semana"}
-                onPress={() => setSelectedPeriod("1 Semana")} />
+                isSelected={selectedPeriod === "1w"}
+                onPress={() => setSelectedPeriod("1w")}
+              />
               <View style={styles.periodSeparator} />
               <PeriodOption
                 label="2 Semanas"
-                isSelected={selectedPeriod === "2 Semanas"}
-                onPress={() => setSelectedPeriod("2 Semanas")} />
+                isSelected={selectedPeriod === "2w"}
+                onPress={() => setSelectedPeriod("2w")}
+              />
               <View style={styles.periodSeparator} />
               <PeriodOption
                 label="3 Semanas"
-                isSelected={selectedPeriod === "3 Semanas"}
-                onPress={() => setSelectedPeriod("3 Semanas")} />
+                isSelected={selectedPeriod === "3w"}
+                onPress={() => setSelectedPeriod("3w")}
+              />
             </View>
           </View>
 
-          {/* Bottom spacing */}
           <View style={styles.bottomSpacing} />
         </ScrollView>
-      </View></>
+    </>
   )
 }
 
@@ -255,35 +269,6 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
-  },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    backgroundColor: "white",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-    paddingBottom: 20,
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navLabel: {
-    fontSize: 12,
-    color: "#999",
-    marginTop: 4,
-  },
-  navLabelSelected: {
-    fontSize: 12,
-    color: "#4A90E2",
-    fontWeight: "600",
-    marginTop: 4,
   },
 })
 

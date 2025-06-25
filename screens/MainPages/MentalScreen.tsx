@@ -189,14 +189,16 @@ export default function MentalScreen() {
             <Text style={styles.errorText}>Erro ao carregar objetivos: {errorObjectives}</Text>
           </View>
         ) : (
-          // Só renderiza a seção se houver objetivos para mostrar
           objectives.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Objetivos</Text>
-              <ObjectiveDisplayCard
-                objectiveTitle={displayObjective?.activity.name || 'Objetivo'}
-                objectiveSubtitle={`Meta até ${displayObjective ? formatDeadline(displayObjective.deadline) : ''}`}
-              />
+              {objectives.map((objective) => (
+                <ObjectiveDisplayCard
+                  key={objective.id}
+                  objectiveTitle={objective.activity.name}
+                  objectiveSubtitle={`Meta até ${formatDeadline(objective.deadline)}`}
+                />
+              ))}
             </View>
           )
         )}
