@@ -16,6 +16,5 @@ export interface MindfulnessLog{
 export interface MindfulnessLogWrite{
     mindfulness: number
     duration: number
-    description: string
     datetime: string
 }

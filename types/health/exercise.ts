@@ -9,7 +9,7 @@ export interface ExerciseLog{
     type: string
     id: number
     user: number
-    exercise: number
+    exercise: Exercise
     duration: number
     distance: number
     description: string
@@ -21,6 +21,5 @@ export interface ExerciseLogWrite{
     exercise: number
     duration: number
     distance?: number
-    description: string
     datetime: string
 }

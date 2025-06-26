@@ -1,79 +1,106 @@
-"use client"
-
 import type React from "react"
 import { useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native"
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import type { ExerciseLog } from "@/types/health/exercise"
-import { getExerciseLogs } from "@/services/exercise/listExerciseLog"
-import Header from "@/components/Header"
+import { format, startOfWeek, isSameDay, isSameWeek } from "date-fns" // Importe date-fns para manipulação de datas
+import { ptBR } from 'date-fns/locale'; // Para localização das semanas e dias
+
+// Importe as fontes Poppins que você carrega em _layout.tsx
+import {
+  useFonts, // Mantenha o useFonts se este componente for o RootLayoutContent ou se você quer carregar fontes específicas aqui
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+  Poppins_700Bold
+} from '@expo-google-fonts/poppins'
+
+import type { ExerciseLog } from "@/types/health/exercise" // Certifique-se do caminho
+import { getExerciseLogs } from "@/services/exercise/listExerciseLog" // Certifique-se do caminho
+import Header from "@/components/Header" // Certifique-se do caminho
+import HeaderWithOptions from "@/components/HeaderWithOptions" // Certifique-se do caminho
 
 const { width, height } = Dimensions.get("window")
 
-interface WeekDay {
+interface WeekDayDisplay { // Interface para o estado dos dias da semana para display
   id: string
   letter: string
-  date: Date | null
+  date: Date
   exercised: boolean
 }
 
+// Assumindo que ExerciseLog pode ter um campo 'exercise' que é um objeto com 'name'
+// ou um campo 'description' que pode ser usado como nome.
+// Se seu ExerciseLog for apenas um number para 'exercise', você precisará buscar o nome do exercício separadamente.
+// Por fidelidade à imagem, vou usar log.exercise (se for objeto) ou log.description.
+
+
+
 const ExerciseActivityScreen: React.FC = () => {
-  const [currentWeek, setCurrentWeek] = useState("Esta Semana")
-  const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([])
+  const [currentDisplayDate, setCurrentDisplayDate] = useState(new Date()) // Data usada para determinar a semana atual
+  const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]) // Logs do período
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [weekDays, setWeekDays] = useState<WeekDay[]>(
-    [...Array(7)].map((_, i) => ({
-      id: ["dom", "seg", "ter", "qua", "qui", "sex", "sab"][i],
-      letter: ["D", "S", "T", "Q", "Q", "S", "S"][i],
-      date: null,
-      exercised: false,
-    })),
-  )
+  // Estado que armazena a representação visual da semana (para os indicadores D, S, T...)
+  const [weekDaysDisplay, setWeekDaysDisplay] = useState<WeekDayDisplay[]>([])
+  
+  // Para evitar refetching desnecessário quando o dia dentro da mesma semana muda
+  const [fetchedWeekStartDate, setFetchedWeekStartDate] = useState<Date | null>(null);
 
+
+  // Efeito para carregar os logs de exercício da semana atual
   useEffect(() => {
     const loadExerciseLogs = async () => {
-      try {
-        const logs = await getExerciseLogs()
-        setExerciseLogs(logs)
+      const startOfCurrentWeek = startOfWeek(currentDisplayDate, { weekStartsOn: 0, locale: ptBR });
 
-        const today = new Date()
-        const dayOfWeek = today.getDay()
-        const start = new Date(today)
-        start.setDate(today.getDate() - dayOfWeek)
-        start.setHours(0, 0, 0, 0)
-
-        const updatedWeek = [...Array(7)].map((_, i) => {
-          const d = new Date(start)
-          d.setDate(start.getDate() + i)
-
-          const exercised = logs.some((log) => {
-            const logDate = new Date(log.datetime)
-            return (
-              logDate.getFullYear() === d.getFullYear() &&
-              logDate.getMonth() === d.getMonth() &&
-              logDate.getDate() === d.getDate()
-            )
-          })
-
-          return {
-            id: ["dom", "seg", "ter", "qua", "qui", "sex", "sab"][i],
-            letter: ["D", "S", "T", "Q", "Q", "S", "S"][i],
-            date: d,
-            exercised,
-          }
-        })
-
-        setWeekDays(updatedWeek)
-      } catch (err) {
-        console.error("Error loading exercise logs:", err)
+      // Evita refetch se já buscamos os dados para esta semana
+      if (fetchedWeekStartDate && isSameWeek(startOfCurrentWeek, fetchedWeekStartDate, { weekStartsOn: 0, locale: ptBR })) {
+          return;
       }
-    }
 
-    loadExerciseLogs()
-  }, [])
+      setLoading(true);
+      setError(null);
+      try {
+        // A função getExerciseLogs deve aceitar a data para buscar logs da semana correspondente
+        const logs = await getExerciseLogs(currentDisplayDate) as ExerciseLog[]; 
 
-  const completedDays = weekDays.filter((d) => d.exercised).length
+        // Processa os logs para determinar quais dias tiveram exercício
+        const weekDaysData: WeekDayDisplay[] = [];
+        const daysOfWeek = ["D", "S", "T", "Q", "Q", "S", "S"]; // 0=Dom, 1=Seg...
+        const currentWeekDays: Date[] = [...Array(7)].map((_, i) => {
+            const day = new Date(startOfCurrentWeek);
+            day.setDate(startOfCurrentWeek.getDate() + i);
+            return day;
+        });
+
+        currentWeekDays.forEach((day, index) => {
+            const exercised = logs.some(log => isSameDay(new Date(log.datetime), day));
+            weekDaysData.push({
+                id: daysOfWeek[index], // id como string de dia (D, S, T...)
+                letter: daysOfWeek[index],
+                date: day,
+                exercised: exercised,
+            });
+        });
+
+        setExerciseLogs(logs);
+        setWeekDaysDisplay(weekDaysData);
+        setFetchedWeekStartDate(startOfCurrentWeek); // Armazena a data de início da semana que foi carregada
+
+      } catch (err: any) {
+        setError(err.message || "Erro ao carregar registros de exercício.");
+        console.error("Error loading exercise logs:", err);
+        setExerciseLogs([]); // Garante que o estado fique vazio em caso de erro
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExerciseLogs();
+  }, [currentDisplayDate, fetchedWeekStartDate]); // Dispara quando a data exibida muda ou a semana muda
+
+  // Nomes dos dias da semana para contagem de resumos
+  const completedDays = weekDaysDisplay.filter((d) => d.exercised).length
   const totalExercises = exerciseLogs.length
 
   const handleBack = () => {
@@ -81,45 +108,33 @@ const ExerciseActivityScreen: React.FC = () => {
   }
 
   const handleAddExercise = () => {
-    router.push("/registerexercise")
+    router.push("/registerexercise") 
   }
 
   const navigateWeek = (direction: "prev" | "next") => {
-    // Handle week navigation
-    console.log(`Navigate ${direction}`)
+    setCurrentDisplayDate(prevDate => {
+      const newDate = new Date(prevDate);
+      newDate.setDate(prevDate.getDate() + (direction === "next" ? 7 : -7)); // Navega uma semana
+      return newDate;
+    });
   }
 
   return (
-    <View style={styles.container}>
-      <Header avatarChar="A" />
-      {/* Header Section with Back Button */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Atividade</Text>
-          </View>
-          <TouchableOpacity>
-            <MaterialCommunityIcons name="dots-vertical" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <Header avatarChar="A"/>
+      <HeaderWithOptions title="Atividade" onBackPress={handleBack} onOptionPress={() => console.log('Options pressed')} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Week Navigation */}
         <View style={styles.weekNavigation}>
           <TouchableOpacity onPress={() => navigateWeek("prev")}>
-            <MaterialCommunityIcons name="chevron-left" size={24} color="#333" />
+            <MaterialCommunityIcons name="chevron-left" size={28} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.weekText}>Esta Semana</Text>
+          <Text style={styles.weekText}>Esta Semana</Text> 
           <TouchableOpacity onPress={() => navigateWeek("next")}>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#333" />
+            <MaterialCommunityIcons name="chevron-right" size={28} color="#333" />
           </TouchableOpacity>
         </View>
 
-        {/* Exercise Summary */}
         <View style={styles.summarySection}>
           <View style={styles.summaryContent}>
             <Text style={styles.summaryMain}>{completedDays} de 7</Text>
@@ -130,36 +145,43 @@ const ExerciseActivityScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Week Days Indicators */}
         <View style={styles.weekDaysContainer}>
-          {weekDays.map((day, index) => (
+          {weekDaysDisplay.map((day, index) => (
             <View key={day.id} style={styles.dayContainer}>
-              <View style={[styles.dayIndicator, day.exercised && styles.dayIndicatorActive]}>
-                {day.exercised && <MaterialCommunityIcons name="check" size={16} color="white" />}
+              <View style={[
+                styles.dayIndicator,
+                day.exercised ? styles.dayIndicatorActive : null,
+                isSameDay(day.date, new Date()) && styles.dayIndicatorToday
+              ]}>
+                {day.exercised && <MaterialCommunityIcons name="check" size={18} color="white" />}
               </View>
               <Text style={styles.dayLabel}>{day.letter}</Text>
             </View>
           ))}
         </View>
 
-        {/* History Section */}
         <View style={styles.historySection}>
           <Text style={styles.historyTitle}>Histórico</Text>
-          <Text style={styles.historyDate}>Hoje, {new Date().toLocaleDateString("pt-BR")}</Text>
+          <Text style={styles.historyDate}>Hoje, {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}</Text>
 
-          {exerciseLogs.length > 0 ? (
-            exerciseLogs.slice(0, 3).map((log, index) => (
+          {loading ? (
+            <ActivityIndicator size="large" color="#4CAF50" style={styles.loadingIndicator} />
+          ) : error ? (
+            <Text style={styles.errorText}>Falha ao carregar histórico: {error}</Text>
+          ) : exerciseLogs.length > 0 ? (
+            exerciseLogs.map((log, index) => (
               <View key={index} style={styles.historyCard}>
                 <View style={styles.historyCardContent}>
                   <View>
-                    <Text style={styles.exerciseType}>{log.type || "Exercício"}</Text>
-                    <Text style={styles.exerciseDetails}>
+                    <Text style={styles.exerciseType}>
+                        { (log.exercise.name || log.description || "Exercício") }
+                    </Text>
+                  </View>
+                  <Text style={styles.exerciseDetails}>
                       {log.distance ? `${log.distance}km` : ""}
                       {log.distance && log.duration ? " - " : ""}
                       {log.duration ? `${log.duration}min` : ""}
                     </Text>
-                  </View>
-                  <Text style={styles.exerciseCount}>{log.duration || 0} min</Text>
                 </View>
               </View>
             ))
@@ -176,65 +198,39 @@ const ExerciseActivityScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Floating Action Button */}
       <TouchableOpacity style={styles.fab} onPress={handleAddExercise}>
         <MaterialCommunityIcons name="plus" size={28} color="white" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
-  },
-  header: {
-    backgroundColor: "white",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backButton: {
-    marginRight: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    backgroundColor: "#FFFFF",
   },
   scrollView: {
     flex: 1,
+    backgroundColor: '#FFFFFF'
   },
   weekNavigation: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 12,
   },
   weekText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "Poppins_600SemiBold", 
     color: "#333",
   },
   summarySection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     marginBottom: 32,
   },
   summaryContent: {
@@ -243,89 +239,107 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   summaryMain: {
-    fontSize: 48,
-    fontWeight: "700",
-    color: "#333",
+    fontSize: 32,
+    fontFamily: "Poppins_500Medium", // Aplicando Poppins
+    color: "#000",
     marginRight: 8,
   },
   summarySubtitle: {
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular", // Pode ser 500Medium se tiver, ou 400Regular
     color: "#666",
-    fontWeight: "500",
   },
   summaryDescription: {
     fontSize: 14,
+    fontFamily: "Poppins_400Regular", // Aplicando Poppins
     color: "#666",
     lineHeight: 20,
   },
   weekDaysContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: 16,
-    marginBottom: 40,
+    paddingHorizontal: 24,
+    marginBottom: 30,
   },
   dayContainer: {
     alignItems: "center",
-    gap: 8,
+    gap: 8, // Espaçamento entre o indicador e o label
   },
   dayIndicator: {
-    width: 40,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: "#E0E0E0",
+    width: 34,
+    height: 57, // Ajustado para ser quadrado, ícone de check ficaria melhor
+    borderRadius: 20, // Metade da largura/altura para ser círculo
+    backgroundColor: "#E0E0E0", // Cor cinza para dias não exercitados
     alignItems: "center",
     justifyContent: "center",
   },
   dayIndicatorActive: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#00FF2F", // Cor verde brilhante para dia exercitado
+  },
+  dayIndicatorEmptyCircle: { // Para o círculo cinza vazio no dia não exercitado
+    width: 20, // Menor que o contêiner para parecer um círculo interno
+    height: 20,
+    borderRadius: 10,
+    borderColor: '#999', // Borda cinza escura
+    borderWidth: 1.5,
+    backgroundColor: 'transparent',
+  },
+  dayIndicatorToday: { // Estilo opcional para destacar o dia atual (ex: uma borda)
+    borderColor: '#333',
+    borderWidth: 2,
   },
   dayLabel: {
     fontSize: 14,
+    fontFamily: "Poppins_500Medium", // Pode ser 500Medium ou 400Regular
     color: "#666",
-    fontWeight: "500",
   },
   historySection: {
     paddingHorizontal: 16,
-    marginBottom: 100,
+    marginBottom: 50,
   },
   historyTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "Poppins_500Medium", // Aplicando Poppins
     color: "#333",
     marginBottom: 8,
   },
   historyDate: {
-    fontSize: 14,
+    fontSize: 12,
+    fontFamily: "Poppins_400Regular", // Aplicando Poppins
     color: "#666",
     marginBottom: 16,
   },
   historyCard: {
     backgroundColor: "white",
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1, },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 16,
   },
   historyCardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderColor: '#E5E7EB',
   },
   exerciseType: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: 16,
+    fontFamily: "Poppins_400Regular", // Aplicando Poppins
+    color: "#00000",
     marginBottom: 4,
   },
   exerciseDetails: {
     fontSize: 14,
+    fontFamily: "Poppins_400Regular", // Aplicando Poppins
     color: "#666",
   },
   exerciseCount: {
     fontSize: 16,
+    fontFamily: "Poppins_500Medium", // Pode ser 500Medium
     color: "#666",
   },
   fab: {
@@ -344,9 +358,26 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  bottomSpacing: {
-    height: 40,
+  bottomSpacing: { // Espaço para o FAB no final da ScrollView
+    height: 80,
   },
-})
+  loadingIndicator: { // Estilo para o ActivityIndicator
+    marginTop: 50,
+  },
+  errorText: { // Estilo para mensagem de erro
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    fontFamily: "Poppins_400Regular",
+  },
+  noDataText: { // Estilo para mensagem de sem dados
+    color: 'gray',
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    fontFamily: "Poppins_400Regular",
+  },
+});
 
 export default ExerciseActivityScreen

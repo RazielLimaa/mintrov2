@@ -6,31 +6,40 @@ import VerticalDotsIcon from './Icons/VerticalDotsIcon';
 
 interface HeaderWithOptionsProps {
   title: string;
-  onBackPress?: () => void; // Opcional, se não quiser usar router.back()
+  onBackPress?: () => void;
+  onOptionPress?: () => void;
 }
 
-const HeaderWithOptions: React.FC<HeaderWithOptionsProps> = ({ title, onBackPress }) => {
+const HeaderWithOptions: React.FC<HeaderWithOptionsProps> = ({ title, onBackPress, onOptionPress }) => {
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
     } else {
-      router.back(); // Usa o router.back() padrão se nenhum handler for fornecido
+      router.back(); 
     }
   };
 
   return (
-    <SafeAreaView style={styles.appbar}>
-      <Appbar.BackAction onPress={handleBack} />
-      <Appbar.Content title={title} titleStyle={styles.appbarTitle} />
-      <TouchableOpacity>
-        <VerticalDotsIcon/>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.appbar}>
+        <Appbar.BackAction onPress={handleBack} />
+        <Appbar.Content title={title} titleStyle={styles.appbarTitle} />
+        <TouchableOpacity onPress={onOptionPress}>
+          <VerticalDotsIcon/>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+        backgroundColor: '#FFFF',
+  },
   appbar: {
+    backgroundColor: '#FFFF',
+    marginHorizontal: 6,
+    marginVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -40,7 +49,7 @@ const styles = StyleSheet.create({
   appbarTitle: {
     fontSize: 18,
     fontWeight: 'regular',
-    color: '#333', // Cor do título
+    color: '#00000', // Cor do título
   },
   saveButtonText: {
     fontSize: 16,
