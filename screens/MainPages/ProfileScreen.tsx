@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Header from '@/components/Header';
+import Header from '@/components/Header'; // Certifique-se do caminho e da implementação deste Header
 
 import { Goal } from '@/types/user/goal';
 import { getGoals } from '@/services/goals/getGoals';
@@ -26,6 +26,10 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold
 } from '@expo-google-fonts/poppins';
+import NotebookIcon from '@/components/Icons/NotebookIcon';
+import MeditationIcon from '@/components/Icons/MeditationIcon';
+import ExerciseIcon from '@/components/Icons/ExerciseIcon';
+import WaterDropIcon from '@/components/WaterDropIcon';
 
 
 const { width } = Dimensions.get('window');
@@ -53,8 +57,12 @@ export default function ProfileScreen() {
     console.log('Mostrar todas as conquistas');
   };
 
-  const handleProfileHeaderPress = () => console.log('Perfil pressionado (header)');
-  const handleChatHeaderPress = () => console.log('Chat pressionado');
+  // Os handlers de Header (onProfileHeaderPress, onChatHeaderPress)
+  // devem ser passados como props para o componente Header, se ele os aceitar.
+  // Vou removê-los daqui e assumir que o Header tem seus próprios comportamentos internos,
+  // ou que eles serão passados para o Header se ele for mais customizável.
+  // const handleProfileHeaderPress = () => console.log('Perfil pressionado (header)');
+  // const handleChatHeaderPress = () => console.log('Chat pressionado');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -94,15 +102,15 @@ export default function ProfileScreen() {
   const avatarChar = fetchedUser?.username ? fetchedUser.username.charAt(0).toUpperCase() : 'A';
 
   const statistics = fetchedUser ? [
-    { iconName: 'notebook-outline' as const, value: fetchedUser.diarys_registers, label: 'Diários registrados' },
-    { iconName: 'meditation' as const, value: fetchedUser.mindfulness_registers, label: 'Sessões de Mindfulness' },
-    { iconName: 'run' as const, value: fetchedUser.exercises_registers, label: 'Exercícios físicos' },
+    { icon: <NotebookIcon size={14}/>, value: fetchedUser.diarys_registers, label: 'Diários registrados' },
+    { icon: <MeditationIcon size={18}/>, value: fetchedUser.mindfulness_registers, label: 'Sessões de Mindfulness' },
+    { icon: <ExerciseIcon size={25} />, value: fetchedUser.exercises_registers, label: 'Exercícios físicos' },
   ] : [];
 
   const transformedGoals = userGoals ? [
-    { iconName: 'water' as const, value: userGoals.hydration_goal, label: 'ml', unit: 'por dia' },
-    { iconName: 'dumbbell' as const, value: userGoals.exercise_goal, label: 'Minutos', unit: 'por dia' },
-    { iconName: 'brain' as const, value: userGoals.mindfulness_goal, label: 'Minutos', unit: 'por dia' },
+    { icon: <WaterDropIcon size={13} color='#525252'/>, value: userGoals.hydration_goal, label: 'ml', unit: 'por dia' },
+    { icon: <MeditationIcon size={18}/>, value: userGoals.exercise_goal, label: 'Minutos', unit: 'por dia' },
+    { icon: <ExerciseIcon size={25}/>, value: userGoals.mindfulness_goal, label: 'Minutos', unit: 'por dia' },
   ] : [];
 
   const achievements = [
@@ -134,8 +142,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-     <Header avatarChar="A" /> 
-     <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      {/* NOVO: Usando o componente Header importado para o cabeçalho */}
+      {/* Assumimos que o componente Header.tsx já renderiza o 'A', 'Mintros' e o ícone de chat */}
+      <Header avatarChar={avatarChar} /> 
+      
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.formCardCommon}>
           <View style={styles.userInfo}>
             <View>
@@ -157,15 +168,15 @@ export default function ProfileScreen() {
         {loadingUser ? (
           <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
         ) : errorUser ? (
-          <Text style={[styles.errorText, { marginHorizontal: 20 }]}>Erro ao carregar estatísticas: {errorUser}</Text>
+          <Text style={styles.errorText}>Erro ao carregar estatísticas: {errorUser}</Text>
         ) : statistics.length === 0 ? (
-          <Text style={[styles.noDataText, { marginHorizontal: 20 }]}>Nenhuma estatística disponível.</Text>
+          <Text style={styles.noDataText}>Nenhuma estatística disponível.</Text>
         ) : (
           <View style={styles.metricCardGrid}>
             {statistics.map((stat, index) => (
               <StatCard
                 key={index}
-                iconName={stat.iconName}
+                icon={stat.icon}
                 value={stat.value}
                 label={stat.label}
                 cardWidth={threeColumnCardWidth}
@@ -180,15 +191,15 @@ export default function ProfileScreen() {
         {loadingGoals ? (
           <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
         ) : errorGoals ? (
-          <Text style={[styles.errorText, { marginHorizontal: 20 }]}>Erro ao carregar metas: {errorGoals}</Text>
+          <Text style={styles.errorText}>Erro ao carregar metas: {errorGoals}</Text>
         ) : transformedGoals.length === 0 ? (
-          <Text style={[styles.noDataText, { marginHorizontal: 20 }]}>Nenhuma meta definida.</Text>
+          <Text style={styles.noDataText}>Nenhuma meta definida.</Text>
         ) : (
           <View style={styles.metricCardGrid}>
             {transformedGoals.map((goal, index) => (
               <StatCard
                 key={index}
-                iconName={goal.iconName}
+                icon={goal.icon}
                 value={goal.value}
                 label={goal.label}
                 cardWidth={threeColumnCardWidth}
@@ -212,12 +223,12 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.achievementCarouselContent}
           >
             {achievements.map((achievement, index) => (
-              <View key={index} style={[styles.achievementItemCustom, { width: twoColumnCardWidth }]}>
+              <View key={index} style={[styles.achievementItemCustom]}>
                 <View style={styles.achievementItemContent}>
                   <View style={[styles.achievementIconBackground, { backgroundColor: achievement.iconBackgroundColor }]}>
                     <MaterialCommunityIcons name={achievement.iconName} size={28} color="white" />
                   </View>
-                  <View style={styles.achievementTextContainer}>
+                  <View style={{flex:1}}>
                     <Text style={styles.achievementTitle}>{achievement.title}</Text>
                     <Text style={styles.achievementDescription}>{achievement.description}</Text>
                   </View>
@@ -234,67 +245,28 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#ff',
   },
   scrollViewContent: {
     marginTop: 10,
     paddingBottom: 20,
     paddingHorizontal: screenContentPaddingHorizontal,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#ADDEA1',
-    width: '100%',
-  },
-  iconButton: {
-    padding: 5,
-  },
-  profilePlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#8BC34A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileText: {
-    color: 'white',
-    fontSize: 18,
-    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: 28,
-    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
-    color: '#34495E',
-    marginRight: 4,
-  },
-  plantIconPlaceholder: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#8BC34A',
-    borderRadius: 10,
+    backgroundColor: '#fff'
   },
 
   formCardCommon: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 25,
+    borderWidth:1, 
+    borderColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal:20 ,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    shadowColor: 'rgba(0,0,0,0.5)',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
     elevation: 5,
-    marginBottom: 20,
   },
 
   userInfo: {
@@ -303,34 +275,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   userName: {
-    fontSize: 24,
-    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
-    color: '#2C3E50',
-    marginBottom: 4,
+    fontSize: 20,
+    fontFamily: 'Poppins_400Regular',
+    color: '#111827',
+    marginBottom: 1,
   },
   joinDate: {
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
+    fontFamily: 'Poppins_400Regular',
     color: '#7F8C8D',
     marginBottom: 8,
   },
   editProfileLink: {
     fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
-    color: '#3498DB',
-    // fontWeight: '600', // Removido, fontFamily já define o peso
+    fontFamily: 'Poppins_400Regular',
+    color: '#1FB6FF',
   },
   avatarPlaceholder: {
-    width: 70,
-    height: 70,
+    width: 64,
+    height: 64,
     borderRadius: 35,
-    backgroundColor: '#ADDEA1',
+    backgroundColor: '#79D457',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 32,
-    fontFamily: 'Poppins_700Bold', // Aplicando Poppins_700Bold
+    fontSize: 20,
+    fontFamily: 'Poppins_400Regular',
     color: 'white',
   },
 
@@ -338,19 +309,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 15,
+    marginTop: 10,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
+    fontSize: 16,
+    fontFamily: 'Poppins_400Regular',
     color: '#2C3E50',
+    marginBottom: 5
   },
   showAllLink: {
     fontSize: 14,
-    fontFamily: 'Poppins_600SemiBold', // Aplicando Poppins_600SemiBold
-    color: '#3498DB',
-    // fontWeight: '600', // Removido
+    fontFamily: 'Poppins_400Regular',
+    color: '#1FB6FF',
   },
 
   metricCardGrid: {
@@ -362,16 +332,14 @@ const styles = StyleSheet.create({
   statMetricCardCustom: {
     width: threeColumnCardWidth,
   },
-  // As propriedades de estilo dentro do StatCard (como statMetricCardContent, etc.)
-  // são gerenciadas pelo próprio componente StatCard.tsx
-  // Você precisará aplicar os fontFamilys lá também.
-
+  
   achievementCarouselContent: {
     gap: cardGap,
     alignItems: 'flex-start',
   },
   achievementItemCustom: {
-    width: twoColumnCardWidth,
+    height: 80,
+    maxWidth: 240,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 15,
@@ -387,26 +355,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   achievementIconBackground: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  achievementTextContainer: {
-    flex: 1,
-  },
   achievementTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_700Bold
-    color: '#2C3E50',
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    color: '#111827',
     marginBottom: 4,
   },
   achievementDescription: {
     fontSize: 12,
-    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
-    color: '#7F8C8D',
+    fontFamily: 'Poppins_400Regular',
+    color: '#4B5563',
   },
   loadingIndicator: {
     marginTop: 20,
@@ -417,13 +382,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 20,
     marginTop: 20,
-    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
+    fontFamily: 'Poppins_400Regular',
   },
   noDataText: {
     color: 'gray',
     textAlign: 'center',
     marginHorizontal: 20,
     marginTop: 20,
-    fontFamily: 'Poppins_400Regular', // Aplicando Poppins_400Regular
+    fontFamily: 'Poppins_400Regular',
   },
 });
