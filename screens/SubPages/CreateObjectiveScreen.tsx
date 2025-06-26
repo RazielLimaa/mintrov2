@@ -1,37 +1,32 @@
-"use client"
-
 import type React from "react"
 import { useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Alert } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import Header from "@/components/Header"
 import { router } from "expo-router"
-import { Activity } from "@/types/mental/diary"
-import { getActivities } from "@/services/diary/listActivities"
-import FormHeader from "@/components/FormHeader"
-import { registerObjectiveLog } from "@/services/objectives/createObjective"
-import { ObjectiveWrite } from "@/types/mental/objectives"
+
+// Importe as fontes Poppins
+import { 
+  Poppins_400Regular, 
+  Poppins_500Medium, // Adicione se usar este peso
+  Poppins_600SemiBold, 
+  Poppins_700Bold 
+} from '@expo-google-fonts/poppins'
+
+import { Activity } from '@/types/mental/diary' // Para a interface Activity
+import { getActivities } from '@/services/diary/listActivities' // Para buscar atividades
+import { getActivityIconName } from '@/utils/activityIconMapper' // Importe a função que retorna o ícone
+import FormHeader from '@/components/FormHeader' // Certifique-se do caminho
+import Header from '@/components/Header' // Certifique-se do caminho
+
+import { registerObjectiveLog } from '@/services/objectives/createObjective' // Para registrar o objetivo
+import { ObjectiveWrite } from '@/types/mental/objectives' // Para a interface ObjectiveWrite
+
 
 const { width } = Dimensions.get("window")
 
-interface ObjectiveGridItemProps {
-  label: string
-  icon: string
-  isSelected: boolean
-  onPress: () => void
-}
+// Importar o ObjectiveGridItem ajustado
+import ObjectiveGridItem from "@/components/ObjectivesGridCard"
 
-const ObjectiveGridItem: React.FC<ObjectiveGridItemProps> = ({ label, icon, isSelected, onPress }) => {
-  return (
-    <TouchableOpacity
-      style={[styles.objectiveGridItem, isSelected ? styles.objectiveGridItemSelected : null]}
-      onPress={onPress}
-    >
-      <MaterialCommunityIcons name={icon as any} size={24} color={isSelected ? "white" : "#333"} />
-      <Text style={[styles.objectiveLabel, isSelected ? styles.objectiveLabelSelected : null]}>{label}</Text>
-    </TouchableOpacity>
-  )
-}
 
 interface PeriodOptionProps {
   label: string
@@ -49,16 +44,16 @@ const PeriodOption: React.FC<PeriodOptionProps> = ({ label, isSelected, onPress 
 }
 
 const CreateObjectiveScreen: React.FC = () => {
-  const [selectedObjective, setSelectedObjective] = useState<string | null>(null)
+  const [selectedObjectiveId, setSelectedObjectiveId] = useState<string | null>(null) // Mudei para string para os IDs das atividades
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
-  const [objectives, setObjectives] = useState<Activity[]>([])
+  const [objectives, setObjectives] = useState<Activity[]>([]) // Renomeei para fetchedActivities se for uma lista de Activity
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchObjectives = async () => {
+    const fetchActivities = async () => { // Renomeado para 'fetchActivities'
       try {
-        const data = await getActivities()
-        setObjectives(data)
+        const data = await getActivities() // Busca a lista de atividades para usar como "objetivos selecionáveis"
+        setObjectives(data) // Define as atividades como opções de objetivo
       } catch (error) {
         console.error("Erro ao buscar atividades:", error)
       } finally {
@@ -66,81 +61,106 @@ const CreateObjectiveScreen: React.FC = () => {
       }
     }
 
-    fetchObjectives()
+    fetchActivities()
   }, [])
 
   const handleSave = async () => {
-  if (!selectedObjective || !selectedPeriod) {
-    alert("Selecione um objetivo e um período antes de salvar.")
-    return
-  }
+    if (!selectedObjectiveId || !selectedPeriod) {
+      Alert.alert("Erro", "Selecione um objetivo e um período antes de salvar.")
+      return
+    }
 
-  const data: ObjectiveWrite = {
-    activity: parseInt(selectedObjective),
-    period: selectedPeriod as '1w' | '2w' | '3w',
-  }
+    const data: ObjectiveWrite = {
+      activity: parseInt(selectedObjectiveId, 10),
+      period: selectedPeriod as '1w' | '2w' | '3w',
+    }
 
-  try {
-    await registerObjectiveLog(data)
-    alert("Objetivo registrado com sucesso!")
-    router.back()
-  } catch (error: any) {
-    console.error("Erro ao registrar objetivo:", error)
-    alert(error.message || "Erro ao registrar objetivo.")
+    try {
+      await registerObjectiveLog(data)
+      Alert.alert("Sucesso", "Objetivo registrado com sucesso!")
+      router.back()
+    } catch (error: any) {
+      console.error("Erro ao registrar objetivo:", error)
+      Alert.alert("Erro", error.message || "Erro ao registrar objetivo.")
+    }
   }
-}
 
   return (
     <>
       <Header avatarChar="A" />
       <FormHeader title="Criar Objetivo" onSavePress={handleSave}/>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Objectives Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Escolha um objetivo</Text>
-            {loading ? (
-              <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 20 }} />
-            ) : (
-              <View style={styles.objectiveGrid}>
-                {objectives.map((obj) => (
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Escolha um objetivo</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 20 }} />
+          ) : (
+            <>
+              <View style={styles.objectiveRow}>
+                {objectives.slice(0, 5).map((obj) => (
                   <ObjectiveGridItem
                     key={obj.id}
                     label={obj.name}
-                    icon={"file-document-outline"}
-                    isSelected={selectedObjective === obj.id.toString()}
-                    onPress={() => setSelectedObjective(obj.id.toString())}
+                    renderIcon={getActivityIconName(obj.name)}
+                    isSelected={selectedObjectiveId === obj.id.toString()}
+                    onPress={() => setSelectedObjectiveId(obj.id.toString())}
                   />
                 ))}
               </View>
-            )}
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Período</Text>
-            <View style={styles.periodCard}>
-              <PeriodOption
-                label="1 Semana"
-                isSelected={selectedPeriod === "1w"}
-                onPress={() => setSelectedPeriod("1w")}
-              />
-              <View style={styles.periodSeparator} />
-              <PeriodOption
-                label="2 Semanas"
-                isSelected={selectedPeriod === "2w"}
-                onPress={() => setSelectedPeriod("2w")}
-              />
-              <View style={styles.periodSeparator} />
-              <PeriodOption
-                label="3 Semanas"
-                isSelected={selectedPeriod === "3w"}
-                onPress={() => setSelectedPeriod("3w")}
-              />
-            </View>
-          </View>
+              <View style={styles.objectiveRow}>
+                {objectives.slice(5, 10).map((obj) => (
+                  <ObjectiveGridItem
+                    key={obj.id}
+                    label={obj.name}
+                    renderIcon={getActivityIconName(obj.name)}
+                    isSelected={selectedObjectiveId === obj.id.toString()}
+                    onPress={() => setSelectedObjectiveId(obj.id.toString())}
+                  />
+                ))}
+              </View>
 
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
+              <View style={styles.objectiveRow}>
+                {objectives.slice(10, 14).map((obj) => (
+                  <ObjectiveGridItem
+                    key={obj.id}
+                    label={obj.name}
+                    renderIcon={getActivityIconName(obj.name)}
+                    isSelected={selectedObjectiveId === obj.id.toString()}
+                    onPress={() => setSelectedObjectiveId(obj.id.toString())}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Período</Text>
+          <View style={styles.periodCard}>
+            <PeriodOption
+              label="1 Semana"
+              isSelected={selectedPeriod === "1w"}
+              onPress={() => setSelectedPeriod("1w")}
+            />
+            <View style={styles.periodSeparator} />
+            <PeriodOption
+              label="2 Semanas"
+              isSelected={selectedPeriod === "2w"}
+              onPress={() => setSelectedPeriod("2w")}
+            />
+            <View style={styles.periodSeparator} />
+            <PeriodOption
+              label="3 Semanas"
+              isSelected={selectedPeriod === "3w"}
+              onPress={() => setSelectedPeriod("3w")}
+            />
+          </View>
+        </View>
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
     </>
   )
 }
@@ -148,13 +168,13 @@ const CreateObjectiveScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#fff",
   },
   header: {
     backgroundColor: "white",
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingVertical: 16,
     paddingHorizontal: 16,
+    paddingTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
@@ -180,25 +200,26 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: '#fff'
   },
   section: {
     paddingHorizontal: 16,
-    marginTop: 24,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontFamily: "Poppins_400Regular", // Poppins SemiBold
+    color: "#111827",
     marginBottom: 16,
   },
   objectiveGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginHorizontal: -4,
+    justifyContent: "flex-start",
+    marginHorizontal: -4, // Compensa a margem dos ObjectiveGridItem
   },
-  objectiveGridItem: {
-    width: (width - 48) / 5,
+  objectiveGridItem: { // ESTILO MOVIDO PARA components/ObjectiveGridItem.tsx
+    width: (width - 48) / 5, // Exemplo de largura
     height: (width - 48) / 5,
     backgroundColor: "white",
     borderRadius: 12,
@@ -215,10 +236,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   objectiveGridItemSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: "#8BC34A",
+    borderColor: "#8BC34A",
   },
-  objectiveLabel: {
+  objectiveLabel: { // ESTILO MOVIDO PARA components/ObjectiveGridItem.tsx
     fontSize: 12,
     color: "#333",
     marginTop: 4,
@@ -230,17 +251,17 @@ const styles = StyleSheet.create({
   periodCard: {
     backgroundColor: "white",
     borderRadius: 12,
-    paddingHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    gap: 2,
     elevation: 2,
   },
   periodOption: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    borderWidth: 1,
   },
   radioButton: {
     width: 20,
@@ -260,6 +281,7 @@ const styles = StyleSheet.create({
   },
   periodLabel: {
     fontSize: 16,
+    fontFamily: "Poppins_400Regular", // Poppins Regular
     color: "#333",
   },
   periodSeparator: {
@@ -270,6 +292,12 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 100,
   },
+  objectiveRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginBottom: 12,
+  paddingHorizontal: 8,
+},
 })
 
 export default CreateObjectiveScreen

@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import Svg, { Path } from "react-native-svg"
 

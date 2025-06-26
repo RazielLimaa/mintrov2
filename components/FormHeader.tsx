@@ -31,6 +31,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({ title, onBackPress, onSavePress
 
 const styles = StyleSheet.create({
   appbar: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
