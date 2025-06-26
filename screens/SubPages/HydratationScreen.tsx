@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import Header from "../../components/Header"; // Verifique se Header.tsx tem 'export default'
-import ProgressCircle from "../../components/ProgressCircle"; // Verifique se ProgressCircle.tsx tem 'export default'
+import Header from "../../components/Header";
+import ProgressCircle from "../../components/ProgressCircle";
 
-import FormHeader from "../../components/FormHeader"; // Verifique se FormHeader.tsx tem 'export default'
+import FormHeader from "../../components/FormHeader";
 
 import { registerHydratationLog } from "@/services/hydratation/registerHydratation";
 import { getHydratationList } from "@/services/hydratation/listHydratation";
@@ -13,8 +13,16 @@ import { Hydratation } from "@/types/health/hydratation";
 
 import { format, isSameDay } from "date-fns";
 import { ptBR } from 'date-fns/locale';
-import WaterDropIcon from "@/components/WaterDropIcon";
+import WaterDropIcon from "@/components/WaterDropIcon"; // Usando o nome correto
 import HeaderWithOptions from "@/components/HeaderWithOptions";
+
+// Importe as fontes Poppins que você carrega em _layout.tsx
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold
+} from '@expo-google-fonts/poppins'
 
 // FUNÇÃO DEFINIDA AQUI (FORA DO COMPONENTE)
 function formatDateToYYYYMMDD(date: Date): string {
@@ -78,7 +86,7 @@ export default function HydrationScreen() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getHydratationList(selectedDate); // Passa o objeto Date, a função da API formata
+        const data = await getHydratationList(selectedDate);
         setHydrationLogs(data);
       } catch (err: any) {
         setError(err.message || "Erro ao carregar hidratação.");
@@ -93,8 +101,9 @@ export default function HydrationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header avatarChar="A" />
-      <HeaderWithOptions title="Hidratação"/>
+      <Header avatarChar="A"/>
+      <HeaderWithOptions title="Hidratação" onBackPress={() => router.back()} onOptionPress={() => console.log('Options pressed')} />
+      {/* <FormHeader title="Hidratação" onSavePress={() => {}} /> Removido, já temos HeaderWithOptions */}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.dateNavigation}>
@@ -115,16 +124,15 @@ export default function HydrationScreen() {
             </Text>
           </View>
           <View style={styles.progressContainer}>
-            <ProgressCircle progress={progress} size={120} color="#9CC9FF" strokeWidth={8} />
+            <ProgressCircle progress={progress} size={100} color="#9CC9FF" strokeWidth={8} />
             <View style={styles.progressIcon}>
-              <WaterDropIcon size={32} color="#0022FF" />
+              <WaterDropIcon size={24} color="#0022FF" />
             </View>
           </View>
         </View>
 
         <View style={styles.historySection}>
           <Text style={styles.historyTitle}>Histórico</Text>
-          {/* USO DA FUNÇÃO formatDateToYYYYMMDD AQUI */}
           <Text style={styles.historyDate}>Data: {formatDateToYYYYMMDD(selectedDate)}</Text>
 
           {loading ? (
@@ -135,17 +143,13 @@ export default function HydrationScreen() {
             <Text style={styles.noDataText}>Nenhum registro de hidratação para essa data.</Text>
           ) : (
             hydrationLogs.map((log, index) => (
-              <View key={index} style={styles.card}>
-                <View style={styles.cardHeader}>
+              <View key={index} style={styles.historyCard}>
+                <View style={styles.historyCardContent}>
                   <View>
-                    <Text style={styles.cardTitle}>Hidratação</Text>
                     <Text style={styles.cardValue}>{log.quantity} ml</Text>
-                    <Text style={styles.cardSubtitle}>
-                      Registrado em {new Date(log.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
                   </View>
-                  <View style={{ alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontSize: 16, color: "#333" }}>
+                  <View style={styles.hydrationCardRight}> {/* NOVO: Alinhamento para "3 copo(s)" */}
+                    <Text style={styles.cardCupsText}>
                       {Math.round(log.quantity / 250)} copo(s)
                     </Text>
                   </View>
@@ -164,16 +168,20 @@ export default function HydrationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F8F8" },
-  scrollView: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#fff" }, // Fundo principal da tela
+  scrollView: { flex: 1, backgroundColor: "#fff" },
   dateNavigation: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 18,
   },
-  dateText: { fontSize: 18, fontWeight: "600", color: "#333" },
+  dateText: { 
+    fontSize: 18, 
+    fontFamily: "Poppins_600SemiBold", // Poppins SemiBold
+    color: "#333" 
+  },
   mainContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -181,14 +189,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 40,
   },
-  leftContent: { flex: 1 },
+  leftContent: { flex: 1, marginRight: 20 }, // Espaçamento entre texto e círculo
   currentAmount: {
-    fontSize: 48,
-    fontWeight: "700",
-    color: "#333",
+    fontSize: 30,
+    fontFamily: "Poppins_500Medium", // Poppins Bold
+    color: "#000",
     marginBottom: 8,
   },
-  remainingText: { fontSize: 14, color: "#666", lineHeight: 20 },
+  remainingText: { 
+    fontSize: 12, 
+    fontFamily: "Poppins_400Regular", // Poppins Regular
+    color: "#666", 
+    lineHeight: 20 
+  },
   progressContainer: {
     position: "relative",
     alignItems: "center",
@@ -200,40 +213,62 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   historySection: { paddingHorizontal: 16, marginBottom: 100 },
-  historyTitle: { fontSize: 18, fontWeight: "600", color: "#333", marginBottom: 8 },
-  historyDate: { fontSize: 14, color: "#666", marginBottom: 16 },
+  historyTitle: { 
+    fontSize: 16, 
+    fontFamily: "Poppins_400Regular", // Poppins SemiBold
+    color: "#333", 
+    marginBottom: 8 
+  },
+  historyDate: { 
+    fontSize: 12, 
+    fontFamily: "Poppins_400Regular", // Poppins Regular
+    color: "#666", 
+    marginBottom: 16 
+  },
   card: {
     backgroundColor: "white",
-    borderRadius: 16,
+    borderRadius: 12, // Arredondamento do card
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1, // Opacidade sutil
+    shadowRadius: 2, // Desfoque sutil
+    elevation: 2, // Elevação Android
     marginBottom: 16,
   },
-  cardHeader: {
+  cardHeader: { // Container do conteúdo do card
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: 16, // Padding interno do card
   },
-  cardTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
+  cardTitle: { 
+    fontSize: 16, 
+    fontFamily: "Poppins_600SemiBold", // Poppins SemiBold
+    color: "#333" 
+  },
   cardValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#333",
-    marginVertical: 4,
+    fontSize: 22,
+    fontFamily: "Poppins_500Medium", // Poppins Bold
+    color: "#000",
+    marginVertical: 2,
   },
-  cardSubtitle: { fontSize: 14, color: "#666" },
-  hydrationProgress: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
+  cardSubtitle: { 
+    fontSize: 14, 
+    fontFamily: "Poppins_400Regular", // Poppins Regular
+    color: "#111" 
+  },
+  hydrationCardRight: { // NOVO ESTILO: Para alinhar "3 copo(s)"
+    alignItems: 'flex-end', // Alinha texto à direita
+    justifyContent: 'center',
+  },
+  cardCupsText: { // NOVO ESTILO: Para o texto "3 copo(s)"
+    fontSize: 14, // Menor que o valor principal
+    fontFamily: "Poppins_400Regular", // Regular
+    color: "#666", // Mais discreto
   },
   fab: {
     position: "absolute",
-    bottom: 100,
+    bottom: 30,
     right: 20,
     width: 56,
     height: 56,
@@ -255,11 +290,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
+    fontFamily: "Poppins_400Regular",
   },
   noDataText: {
     textAlign: 'center',
     marginTop: 20,
     color: 'gray',
     fontSize: 16,
+    fontFamily: "Poppins_400Regular",
+  },
+  historyCard: {
+    backgroundColor: "white",
+    borderRadius: 12, // Arredondamento dos cantos
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2, // Opacidade da sombra
+    shadowRadius: 4, // Raio do desfoque
+    elevation: 3, // Elevação para Android
+    marginBottom: 16,
+  },
+  historyCardContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });

@@ -77,7 +77,7 @@ const MindfulnessActivityScreen: React.FC = () => { // RENOMEADO O COMPONENTE
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(currentDisplayDate);
     newDate.setDate(currentDisplayDate.getDate() + (direction === "next" ? 1 : -1));
-    setCurrentDisplayDate(newDate); // Use this to navigate weeks
+    setCurrentDisplayDate(newDate); 
   };
 
   const weekDaysLabels = ["D", "S", "T", "Q", "Q", "S", "S"]; // Nomes dos dias da semana para display

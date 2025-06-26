@@ -39,12 +39,12 @@ const styles = StyleSheet.create({
   },
   appbarTitle: {
     fontSize: 18,
-    fontWeight: 'regular',
-    color: '#333', // Cor do título
+    fontFamily: 'Poppins_400Regular',
+    color: '#000', // Cor do título
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins_400Regular',
     color: '#00FF00', // Cor verde vibrante para "Salvar"
     marginRight: 10, // Espaçamento à direita
   },
