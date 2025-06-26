@@ -15,6 +15,7 @@ import { getMindfulnessList } from "@/services/mindfulness/listMindfulnessLog";
 import { getExerciseLogs } from "@/services/exercise/listExerciseLog";
 import { getHydratationList } from "@/services/hydratation/listHydratation";
 import ShoeIcon from "@/components/ShoeIcon";
+import WaterDropIcon from "@/components/WaterDropIcon";
 
 const { width, height } = Dimensions.get("window");
 
@@ -190,11 +191,10 @@ export default function HealthScreen() {
           <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
         ) : (
           <>
-            {/* Main Stats (km, passos, kcal) */}
-            <View style={styles.mainStats}>
+          <View style={styles.mainStats}>
               <View style={styles.sideStatItem}>
-                <View style={styles.progressContainer}>
-                  <ProgressCircle progress={Math.min(parseFloat(currentDayStats.distance) / 10 * 100, 100)} size={width * 0.18} color="#9CC9FF" strokeWidth={5} />
+                <View style={[styles.progressContainer, styles.sideStatProgressContainer]}> {/* NOVO: Estilo específico */}
+                  <ProgressCircle progress={Math.min(parseFloat(currentDayStats.distance) / 10 * 100, 100)} size={width * 0.18} color="#9CC9FF" strokeWidth={5} backgroundColor="#E5E7EB" />
                   <View style={styles.progressContent}>
                     <MaterialCommunityIcons name="map-marker" size={16} color="#3B82F6" />
                   </View>
@@ -204,10 +204,10 @@ export default function HealthScreen() {
               </View>
 
               <View style={styles.mainStatItem}>
-                <View style={styles.progressContainer}>
-                  <ProgressCircle progress={Math.min(currentDayStats.steps / 100, 100)} size={width * 0.25} color="#9CC9FF" strokeWidth={6} />
+                <View style={[styles.progressContainer, styles.mainStatProgressContainer]}> {/* NOVO: Estilo específico */}
+                  <ProgressCircle progress={Math.min(currentDayStats.steps / 100, 100)} size={width * 0.25} color="#9CC9FF" strokeWidth={6} backgroundColor="#E5E7EB" />
                   <View style={styles.progressContent}>
-                    <ShoeIcon size={24} color="#000" />
+                    <ShoeIcon size={24}/>
                   </View>
                 </View>
                 <Text style={styles.mainStatValue}>{currentDayStats.steps}</Text>
@@ -215,8 +215,8 @@ export default function HealthScreen() {
               </View>
 
               <View style={styles.sideStatItem}>
-                <View style={styles.progressContainer}>
-                  <ProgressCircle progress={Math.min(currentDayStats.kcal / 20, 100)} size={width * 0.18} color="#9CC9FF" strokeWidth={5} />
+                <View style={[styles.progressContainer, styles.sideStatProgressContainer]}> {/* NOVO: Estilo específico */}
+                  <ProgressCircle progress={Math.min(currentDayStats.kcal / 20, 100)} size={width * 0.18} color="#9CC9FF" strokeWidth={5} backgroundColor="#E5E7EB" />
                   <View style={styles.progressContent}>
                     <MaterialCommunityIcons name="fire" size={16} color="#F97316" />
                   </View>
@@ -226,19 +226,19 @@ export default function HealthScreen() {
               </View>
             </View>
 
-            {/* Hydration Card - Clickable (Dados da API) */}
+
             <TouchableOpacity style={styles.cardTouchable} onPress={handleHydrationPress} activeOpacity={0.7}>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <View>
                     <Text style={styles.cardTitle}>Hidratação</Text>
                     <Text style={styles.cardValue}>{totalHydrationToday} ml</Text>
-                    <Text style={styles.cardSubtitle}>Meta: {hydrationGoal} ml</Text>
+                    <Text style={styles.cardSubtitle}>Hoje</Text>
                   </View>
                   <View style={styles.hydrationProgress}>
-                    <ProgressCircle progress={hydrationProgressPercentage} size={60} color="#9CC9FF" strokeWidth={6} />
+                    <ProgressCircle progress={hydrationProgressPercentage} size={80} color="#9CC9FF" strokeWidth={6} />
                     <View style={styles.hydrationIcon}>
-                      <MaterialCommunityIcons name="water" size={20} color="#3B82F6" />
+                      <WaterDropIcon size={18}/>
                     </View>
                   </View>
                 </View>
@@ -249,7 +249,7 @@ export default function HealthScreen() {
             <TouchableOpacity style={styles.cardTouchable} onPress={() => router.push('/exercises')}>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <View style={styles.cardLeft}>
+                  <View>
                     <Text style={styles.cardTitle}>Dias com Exercício</Text>
                     <Text style={styles.cardValue}>{completedExerciseDays} de 7</Text>
                     <Text style={styles.cardSubtitle}>Esta semana</Text>
@@ -258,10 +258,10 @@ export default function HealthScreen() {
                     <View style={styles.weekDays}>
                       {weekDaysLabels.map((day, index) => (
                         <View key={index} style={styles.dayContainer}>
-                          <Text style={styles.dayLabel}>{day}</Text>
                           <View style={[styles.dayIndicator, exerciseDaysProgress[index] && styles.dayIndicatorActive]}>
                             {exerciseDaysProgress[index] && <Text style={styles.checkmark}>✓</Text>}
                           </View>
+                          <Text style={styles.dayLabel}>{day}</Text>
                         </View>
                       ))}
                     </View>
@@ -270,23 +270,23 @@ export default function HealthScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Mindfulness Days Card */}
             <TouchableOpacity style={styles.cardTouchable} onPress={() => router.push('/mindfulness')}>
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <View style={styles.cardLeft}>
+                  <View>
                     <Text style={styles.cardTitle}>Dias com Mindfulness</Text>
                     <Text style={styles.cardValue}>{completedMindfulnessDays} de 7</Text>
                     <Text style={styles.cardSubtitle}>Esta semana</Text>
                   </View>
+                  
                   <View style={styles.weekProgress}>
                     <View style={styles.weekDays}>
                       {weekDaysLabels.map((day, index) => (
                         <View key={index} style={styles.dayContainer}>
-                          <Text style={styles.dayLabel}>{day}</Text>
                           <View style={[styles.dayIndicator, mindfulnessDaysProgress[index] && styles.dayIndicatorActive]}>
                             {mindfulnessDaysProgress[index] && <Text style={styles.checkmark}>✓</Text>}
                           </View>
+                          <Text style={styles.dayLabel}>{day}</Text>
                         </View>
                       ))}
                     </View>
@@ -304,7 +304,7 @@ export default function HealthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,
@@ -399,7 +399,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: width * 0.05,
+    paddingHorizontal: width * 0.05,
+    paddingVertical: width * 0.04,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -408,25 +409,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  cardLeft: {
-    flex: 1,
-  },
   cardTitle: {
-    fontSize: 16,
-    color: "#6B7280",
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
     fontWeight: "500",
     marginBottom: 8,
   },
   cardValue: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#374151",
+    fontFamily: 'Poppins_600SemiBold',
+    color: "#000",
     marginBottom: 4,
   },
   cardSubtitle: {
@@ -450,11 +449,11 @@ const styles = StyleSheet.create({
   weekDays: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 4,
   },
   dayContainer: {
     alignItems: "center",
-    gap: 4,
+    gap: 1,
   },
   dayLabel: {
     fontSize: 12,
@@ -462,19 +461,38 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   dayIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#E5E7EB",
+    width: 14,
+    height: 33, 
+    borderRadius: 20, // Metade da largura/altura para ser círculo
+    backgroundColor: "#E0E0E0", // Cor cinza para dias não exercitados
     alignItems: "center",
     justifyContent: "center",
   },
   dayIndicatorActive: {
-    backgroundColor: "#79D457",
+    backgroundColor: "#00FF2F", // Cor verde brilhante para dia exercitado
+  },
+  dayIndicatorEmptyCircle: { // Para o círculo cinza vazio no dia não exercitado
+    width: 20, // Menor que o contêiner para parecer um círculo interno
+    height: 20,
+    borderRadius: 10,
+    borderColor: '#999', // Borda cinza escura
+    borderWidth: 1.5,
+    backgroundColor: 'transparent',
+  },
+  dayIndicatorToday: { // Estilo opcional para destacar o dia atual (ex: uma borda)
+    borderColor: '#333',
+    borderWidth: 2,
   },
   checkmark: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
   },
+  mainStatProgressContainer: { 
+    marginBottom: 0, 
+  },
+  sideStatProgressContainer: { // NOVO ESTILO: para km/kcal (side items)
+    marginBottom: -0, // Move para baixo, dando mais espaço
+  },
+
 });
