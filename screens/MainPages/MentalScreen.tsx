@@ -236,14 +236,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 8,
     paddingHorizontal: Dimensions.get('window').width * 0.05,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 16,
+    fontSize: 16,
+    fontFamily: 'Poppins_400Regular',
+    color: '#111827',
+    marginBottom: 8,
   },
   errorText: {
     color: 'red',

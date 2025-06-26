@@ -64,21 +64,21 @@ const styles = StyleSheet.create({
   dateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   dateDot: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 6,
     backgroundColor: '#374151',
-    marginRight: 12,
+    marginRight: 6,
     position: 'relative',
     left: -4,
   },
   dateHeaderText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: '#525252',
   },
   timelineContainer: {
     position: 'relative',
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 2,
     alignItems: 'center',
-    marginLeft: -19,
+    marginLeft: -20,
   },
   continuousTimelineLine: {
     width: 2,
