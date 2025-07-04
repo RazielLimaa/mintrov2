@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios'; 
 import { clearTokens, getToken, getRefreshToken, saveToken } from '../stores/authStore';
+import { router } from 'expo-router';
 
 const apiUrl = 'http://localhost:8000/api/'; 
 
@@ -35,7 +36,7 @@ api.interceptors.response.use(
         const refreshToken = await getRefreshToken();
 
         if (!refreshToken) {
-          console.warn('Refresh token ausente. Redirecionando para login.');
+          router.push('/login')
           return Promise.reject(error);
         }
 

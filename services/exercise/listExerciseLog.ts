@@ -17,7 +17,7 @@ export const getExerciseLogs = async (date: Date = new Date()): Promise<Exercise
     });
     return response.data;
   } catch (error: any) {
-    console.error('Erro na API de Exercício:', error);
+    console.log('Erro na API de Exercício:', error);
     return [];
   }
 };

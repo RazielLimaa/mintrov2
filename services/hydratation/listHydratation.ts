@@ -11,7 +11,7 @@ export const getHydratationList = async (date: Date = new Date()): Promise<Hydra
     });
     return response.data;
   } catch (error: any) {
-    console.error('Erro na API de Hidratação:', error);
+    console.log('Erro na API de Hidratação:', error);
     return [];
   }
 };
