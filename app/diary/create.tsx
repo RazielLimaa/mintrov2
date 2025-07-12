@@ -45,7 +45,7 @@ const CreateDiaryScreen = () => {
 
   const [moods, setMoods] = useState<MoodOption[]>([
     { id: "Excelente", label: "Excelente", imageSource: require("@/assets/images/mood-excellent.png"), isSelected: false },
-    { id: "Bom", label: "Bem", imageSource: require("@/assets/images/mood-smile.png"), isSelected: false },
+    { id: "Bom", label: "Bom", imageSource: require("@/assets/images/mood-smile.png"), isSelected: false },
     { id: "Neutro", label: "Neutro", imageSource: require("@/assets/images/mood-neutral.png"), isSelected: false },
     { id: "Ruim", label: "Mal", imageSource: require("@/assets/images/mood-sad.png"), isSelected: false },
     { id: "Péssimo", label: "Horrível", imageSource: require("@/assets/images/mood-cry.png"), isSelected: false },
@@ -193,7 +193,7 @@ const CreateDiaryScreen = () => {
       await createDiary(formData);
 
       Alert.alert("Sucesso", "Diário criado com sucesso!");
-      router.back();
+      router.replace('/(tabs)/mental');
 
     } catch (error: any) {
       const errorMessage = error.message || "Erro ao criar diário. Tente novamente.";
@@ -229,7 +229,7 @@ const CreateDiaryScreen = () => {
   return (
     <View style={styles.container}>
       <Header avatarChar="A" />
-      <FormHeader title="Novo Diário" onBackPress={() => router.back()} onSavePress={handleSave} />
+      <FormHeader title="Novo Diário" onBackPress={() => router.replace('/(tabs)/mental')} onSavePress={handleSave} />
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <MainInput
@@ -288,7 +288,7 @@ const CreateDiaryScreen = () => {
 
         {loadingObjectives ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Objetivos</Text>+
+            <Text style={styles.sectionTitle}>Objetivos</Text>
             <ActivityIndicator size="large" color="#0000ff" />
           </View>
         ) : errorObjectives ? (
